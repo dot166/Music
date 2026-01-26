@@ -4,9 +4,8 @@ package {
 }
 
 android_app {
-    name: "MusicLegacy",
-    srcs: ["src/**/*.java"],
-    resource_dirs: ["kotlin/res"],
+    name: "Music",
+    srcs: ["src/**/*.kt"],
     sdk_version: "current",
     product_specific: true,
     optimize: {
