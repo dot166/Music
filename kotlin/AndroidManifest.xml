@@ -37,7 +37,7 @@
             android:launchMode="singleTop"
             android:requestLegacyExternalStorage="true">
 
-        <activity android:name="AudioPreview" android:theme="@android:style/Theme.Dialog"
+        <activity android:name="AudioPreview" android:theme="@android:style/Theme.DeviceDefault.Dialog"
                   android:taskAffinity=""
                   android:excludeFromRecents="true" android:exported="true" >
             <intent-filter>
@@ -59,8 +59,7 @@
                 <data android:mimeType="application/x-ogg"/>
                 <data android:mimeType="application/itunes"/>
             </intent-filter>
-            <intent-filter
-                    android:priority="-1">
+            <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
@@ -96,7 +95,7 @@
 
         <service android:name="com.android.music.MediaPlaybackService"
                  android:exported="true"
-                 android:label="Android Open Source Music Playback Service">
+                 android:label="Music Playback Service">
             <intent-filter>
                 <action android:name="android.media.browse.MediaBrowserService" />
             </intent-filter>
