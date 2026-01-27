@@ -1,0 +1,9 @@
+[versions]
+aconfig = "1.2.1"
+agp = "9.0.0"
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+aconfig = { id = "io.github.dot166.aconfig", version.ref = "aconfig" }
+
+[libraries]
