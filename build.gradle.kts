@@ -2,7 +2,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.aconfig)
+//    alias(libs.plugins.aconfig)
 }
 
 android {
@@ -10,8 +10,8 @@ android {
     compileSdk = 36
     defaultConfig {
         applicationId = "com.android.music"
-        minSdk = 19
-        targetSdk = 30
+        minSdk = 29
+        targetSdk = 36
         versionCode = 1
         versionName = versionCode.toString()
     }
@@ -19,6 +19,9 @@ android {
         named("release") {
             isMinifyEnabled = false
             setProguardFiles(listOf(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"))
+        }
+        named("debug") {
+            applicationIdSuffix = ".DEV"
         }
     }
     compileOptions {
@@ -42,9 +45,13 @@ kotlin {
 }
 
 dependencies {
+    implementation(libs.j.lib)
+    implementation(libs.androidx.media3.exoplayer)
+    implementation(libs.androidx.media3.common)
+    implementation(libs.androidx.media3.session)
 }
 
-aconfig {
-    textProtoRepo = "https://github.com/GrapheneOS/platform_build_release"
-    aconfigFiles = mutableListOf("")
-}
+//aconfig {
+//    textProtoRepo = "https://github.com/GrapheneOS/platform_build_release"
+//    aconfigFiles = mutableListOf("")
+//}
