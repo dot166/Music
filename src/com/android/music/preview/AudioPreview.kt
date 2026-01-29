@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.music
+package com.android.music.preview
 
 import android.content.Context
 import android.media.AudioManager
@@ -30,6 +30,7 @@ import androidx.media3.common.MediaMetadata
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
+import com.android.music.R
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.slider.Slider
 import io.github.dot166.jlib.app.jActivity

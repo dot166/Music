@@ -24,6 +24,9 @@
 
     <!-- Permissions -->
     <uses-permission android:name="android.permission.READ_MEDIA_AUDIO"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"
+        tools:ignore="ForegroundServicesPolicy" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"/>
 
     <!-- App Declaration -->
     <application
@@ -31,9 +34,10 @@
             android:label="@string/app_name"
             android:supportsRtl="true"
             android:launchMode="singleTop"
+            android:theme="@style/Theme.Material3.DynamicColors.DayNight.NoActionBar"
             android:requestLegacyExternalStorage="true">
 
-        <activity android:name="AudioPreview" android:theme="@style/Theme.Music.Dialog"
+        <activity android:name=".preview.AudioPreview" android:theme="@style/Theme.Music.Dialog"
                   android:taskAffinity=""
                   android:excludeFromRecents="true" android:exported="true" >
             <intent-filter>
@@ -66,6 +70,21 @@
                 <data android:mimeType="application/itunes"/>
             </intent-filter>
         </activity>
+        <activity android:name=".ui.MusicActivity" android:exported="true" >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity>
+
+        <service
+            android:name=".playback.MusicService"
+            android:exported="true"
+            android:foregroundServiceType="mediaPlayback">
+            <intent-filter>
+                <action android:name="androidx.media3.session.MediaSessionService" />
+            </intent-filter>
+        </service>
 
     </application>
 

@@ -84,12 +84,11 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/playpause"
-                style="?attr/materialIconButtonFilledStyle"
+                style="@style/Widget.Music.Button.PlayPause"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:onClick="playPauseClicked"
-                app:icon="@drawable/media3_icon_play"
-                app:iconSize="32dp"/>
+                app:icon="@drawable/media3_icon_play"/>
         </LinearLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
