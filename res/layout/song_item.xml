@@ -10,12 +10,11 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <ImageView
+    <com.google.android.material.imageview.ShapeableImageView
         android:id="@+id/song_album_cover"
         android:layout_width="@dimen/size_touchable_small"
         android:layout_height="@dimen/size_touchable_small"
         app:shapeAppearance="@style/ShapeAppearance.Material3.Corner.Medium"
-        app:iconSize="@dimen/size_icon_small"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />

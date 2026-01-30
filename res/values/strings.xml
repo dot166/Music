@@ -329,6 +329,8 @@
     <string name="skip_next">Skip to next</string>
     <string name="no_search_results">No search results.</string>
     <string name="message_seekbar">Setting Seekbar max to %d sec</string>
+    <string name="unknown_genre_name">Unknown genre</string>
+    <string name="genres_title">Genres</string>
 
 </resources>
 

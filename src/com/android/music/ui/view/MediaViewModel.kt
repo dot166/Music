@@ -15,9 +15,9 @@ class MediaViewModel() : ViewModel() {
         return songsMap
     }
 
-    fun loadSongs(application: Application, album: String? = null) {
+    fun loadSongs(application: Application, album: String? = null, genre: String? = null) {
         val repository = MusicRepository.getInstance(application)
-        val mediaItems: MutableList<MediaItem> = repository.loadSongs(album)
+        val mediaItems: MutableList<MediaItem> = repository.loadSongs(album, genre)
         songsMap.postValue(mediaItems)
     }
     private val albumsMap: MutableLiveData<MutableList<MediaItem>> =
@@ -43,5 +43,17 @@ class MediaViewModel() : ViewModel() {
         val repository = MusicRepository.getInstance(application)
         val mediaItems: MutableList<MediaItem> = repository.loadArtists()
         artistsMap.postValue(mediaItems)
+    }
+    private val genreMap: MutableLiveData<MutableList<MediaItem>> =
+        MutableLiveData<MutableList<MediaItem>>()
+
+    fun getGenres(): LiveData<MutableList<MediaItem>> {
+        return genreMap
+    }
+
+    fun loadGenres(application: Application) {
+        val repository = MusicRepository.getInstance(application)
+        val mediaItems: MutableList<MediaItem> = repository.loadGenres()
+        genreMap.postValue(mediaItems)
     }
 }

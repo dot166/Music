@@ -9,21 +9,20 @@ import android.os.Looper
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
-import android.view.View.VISIBLE
 import android.view.ViewGroup
 import android.widget.ImageView
-import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.fragment.app.Fragment
 import androidx.media3.common.Player
-import androidx.media3.common.util.UnstableApi
+import androidx.media3.common.Player.REPEAT_MODE_ALL
+import androidx.media3.common.Player.REPEAT_MODE_OFF
+import androidx.media3.common.Player.REPEAT_MODE_ONE
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
 import com.android.music.R
 import com.android.music.playback.MusicService
 import com.google.android.material.button.MaterialButton
-import com.google.android.material.progressindicator.CircularProgressIndicator
 import com.google.android.material.slider.Slider
 import com.google.common.util.concurrent.FutureCallback
 import com.google.common.util.concurrent.Futures
@@ -54,6 +53,22 @@ class NowPlayingFragment: Fragment() {
             updatePlayPause()
             layoutMain.findViewById<TextView>(R.id.now_playing_title)!!.text = controller.getMediaMetadata().title
             layoutMain.findViewById<TextView>(R.id.now_playing_artist)!!.text = controller.getMediaMetadata().artist
+            layoutMain.findViewById<MaterialButton>(R.id.button8).isActivated = controller.shuffleModeEnabled
+            layoutMain.findViewById<MaterialButton>(R.id.button8).setIconResource(
+                when (controller.shuffleModeEnabled) {
+                    true -> androidx.media3.session.R.drawable.media3_icon_shuffle_on
+                    false -> androidx.media3.session.R.drawable.media3_icon_shuffle_off
+                }
+            )
+            layoutMain.findViewById<MaterialButton>(R.id.button4).isActivated = controller.repeatMode != REPEAT_MODE_OFF
+            layoutMain.findViewById<MaterialButton>(R.id.button4).setIconResource(
+                when (controller.repeatMode) {
+                    REPEAT_MODE_OFF -> androidx.media3.session.R.drawable.media3_icon_repeat_off
+                    REPEAT_MODE_ALL -> androidx.media3.session.R.drawable.media3_icon_repeat_all
+                    REPEAT_MODE_ONE -> androidx.media3.session.R.drawable.media3_icon_repeat_one
+                    else -> androidx.media3.session.R.drawable.media3_icon_repeat_off
+                }
+            )
             val artBytes = controller.mediaMetadata.artworkData
             if (artBytes != null) {
                 val bitmap = BitmapFactory.decodeByteArray(artBytes, 0, artBytes.size)
@@ -76,7 +91,7 @@ class NowPlayingFragment: Fragment() {
     }
 
     private fun updatePlayPause() {
-        val b: MaterialButton? = layoutMain.findViewById<MaterialButton>(R.id.button6)
+        val b: MaterialButton? = layoutMain.findViewById(R.id.button6)
         if (b != null) {
             if (controller.isPlaying) {
                 b.setIconResource(androidx.media3.session.R.drawable.media3_icon_pause)
@@ -98,10 +113,10 @@ class NowPlayingFragment: Fragment() {
 
         val future = MediaController.Builder(requireContext(), token)
             .buildAsync()
-        layoutMain = view.findViewById<ConstraintLayout>(R.id.layoutMain)
+        layoutMain = view.findViewById(R.id.layoutMain)
         layoutMain.findViewById<TextView>(R.id.now_playing_title)!!.isSelected = true
         layoutMain.findViewById<TextView>(R.id.now_playing_artist)!!.isSelected = true
-        mSeekBar = layoutMain.findViewById<Slider>(R.id.seekBar)
+        mSeekBar = layoutMain.findViewById(R.id.seekBar)
         if (mDuration == 0L) {
             mDuration = 1L
         }
@@ -125,7 +140,54 @@ class NowPlayingFragment: Fragment() {
 
                     mSeekBar.addOnChangeListener(mSeekListener)
                     mSeekBar.addOnSliderTouchListener(mTouchListener)
-                    layoutMain.findViewById<MaterialButton>(R.id.button6).setOnClickListener { v -> playPauseClicked(v) }
+                    layoutMain.findViewById<MaterialButton>(R.id.button4).setOnClickListener { v ->
+                        controller.repeatMode = when (controller.repeatMode) {
+                            REPEAT_MODE_OFF -> REPEAT_MODE_ALL
+                            REPEAT_MODE_ALL -> REPEAT_MODE_ONE
+                            REPEAT_MODE_ONE -> REPEAT_MODE_OFF
+                            else -> REPEAT_MODE_OFF
+                        }
+                        v.isActivated = controller.repeatMode != REPEAT_MODE_OFF
+                        (v as MaterialButton).setIconResource(
+                            when (controller.repeatMode) {
+                                REPEAT_MODE_OFF -> androidx.media3.session.R.drawable.media3_icon_repeat_off
+                                REPEAT_MODE_ALL -> androidx.media3.session.R.drawable.media3_icon_repeat_all
+                                REPEAT_MODE_ONE -> androidx.media3.session.R.drawable.media3_icon_repeat_one
+                                else -> androidx.media3.session.R.drawable.media3_icon_repeat_off
+                            }
+                        )
+                    }
+                    layoutMain.findViewById<MaterialButton>(R.id.button5).setOnClickListener { _ ->
+                        controller.seekToPreviousMediaItem()
+                    }
+                    layoutMain.findViewById<MaterialButton>(R.id.button6).setOnClickListener { _ ->
+                        when {
+                            controller.playbackState == Player.STATE_ENDED -> {
+                                controller.seekTo(0)
+                                controller.play()
+                            }
+                            controller.isPlaying -> {
+                                controller.pause()
+                            }
+                            else -> {
+                                controller.play()
+                            }
+                        }
+                        updatePlayPause()
+                    }
+                    layoutMain.findViewById<MaterialButton>(R.id.button7).setOnClickListener { _ ->
+                        controller.seekToNextMediaItem()
+                    }
+                    layoutMain.findViewById<MaterialButton>(R.id.button8).setOnClickListener { v ->
+                        controller.shuffleModeEnabled = !controller.shuffleModeEnabled
+                        v.isActivated = controller.shuffleModeEnabled
+                        (v as MaterialButton).setIconResource(
+                            when (controller.shuffleModeEnabled) {
+                                true -> androidx.media3.session.R.drawable.media3_icon_shuffle_on
+                                false -> androidx.media3.session.R.drawable.media3_icon_shuffle_off
+                            }
+                        )
+                    }
                     mHandled.post(updateThread)
                 }
 
@@ -168,21 +230,5 @@ class NowPlayingFragment: Fragment() {
 
             controller.seekTo(target)
         }
-    }
-
-    fun playPauseClicked(v: View?) {
-        when {
-            controller.playbackState == Player.STATE_ENDED -> {
-                controller.seekTo(0)
-                controller.play()
-            }
-            controller.isPlaying -> {
-                controller.pause()
-            }
-            else -> {
-                controller.play()
-            }
-        }
-        updatePlayPause()
     }
 }

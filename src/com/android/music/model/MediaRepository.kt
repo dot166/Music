@@ -3,19 +3,13 @@ package com.android.music.model
 import android.annotation.SuppressLint
 import android.content.ContentUris
 import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.Canvas
-import android.graphics.drawable.BitmapDrawable
-import android.graphics.drawable.Drawable
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.provider.MediaStore
 import android.provider.OpenableColumns
-import androidx.core.graphics.createBitmap
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import com.android.music.R
-import java.io.ByteArrayOutputStream
 
 
 class MusicRepository private constructor(context: Context) {
@@ -32,7 +26,7 @@ class MusicRepository private constructor(context: Context) {
     }
 
     @SuppressLint("UseCompatLoadingForDrawables")
-    fun loadSongs(album: String?): MutableList<MediaItem> {
+    fun loadSongs(album: String?, genre: String?): MutableList<MediaItem> {
         val mediaItems = mutableListOf<MediaItem>()
         val selectionParts = mutableListOf(
             "${MediaStore.Audio.Media.RELATIVE_PATH} LIKE ?"
@@ -42,6 +36,9 @@ class MusicRepository private constructor(context: Context) {
         if (album != null) {
             selectionParts.add("${MediaStore.Audio.Media.ALBUM} = ?")
             args.add(album)
+        } else if (genre != null) {
+            selectionParts.add("${MediaStore.Audio.Media.GENRE} = ?")
+            args.add(genre)
         }
 
         val selection = selectionParts.joinToString(" AND ")
@@ -198,6 +195,49 @@ class MusicRepository private constructor(context: Context) {
         return artists.values.toMutableList()
     }
 
+    @SuppressLint("UseCompatLoadingForDrawables")
+    fun loadGenres(): MutableList<MediaItem> {
+        val genres = mutableMapOf<String, MediaItem>()
+        val selection = "${MediaStore.Audio.Media.RELATIVE_PATH} LIKE ?"
+        val selectionArgs = arrayOf("Music/%")
+
+        val cursor = appContext.contentResolver.query(
+            MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+            arrayOf(
+                MediaStore.Audio.Media.GENRE,
+                MediaStore.Audio.Media.RELATIVE_PATH
+            ),
+            selection,
+            selectionArgs,
+            MediaStore.Audio.Media.GENRE
+        )
+
+        cursor?.use {
+            while (it.moveToNext()) {
+                val genre = it.getString(it.getColumnIndexOrThrow(MediaStore.Audio.Media.GENRE))
+                    ?: appContext.getString(R.string.unknown_genre_name)
+
+                // Already emitted this genre? Skip — we only need one representative
+                if (genres.containsKey(genre)) continue
+
+                val item = MediaItem.Builder()
+                    .setMediaId("genre:$genre")
+                    .setMediaMetadata(
+                        MediaMetadata.Builder()
+                            .setTitle(genre)
+                            .setIsBrowsable(true)
+                            .setIsPlayable(false)
+                            .build()
+                    )
+                    .build()
+
+                genres[genre] = item
+            }
+        }
+
+        return genres.values.toMutableList()
+    }
+
     fun resolveTitle(context: Context, uri: Uri, metadataTitle: CharSequence?): String {
         metadataTitle?.toString()?.trim()?.let {
             if (it.isNotEmpty()) return it
@@ -221,28 +261,6 @@ class MusicRepository private constructor(context: Context) {
         }
 
         return uri.toString()
-    }
-
-    fun drawableToBitmap(drawable: Drawable): Bitmap? {
-        if (drawable is BitmapDrawable) {
-            return drawable.bitmap
-        }
-
-        // We ask for the bounds if they have been set as they would be most
-        // correct, then we check we are  > 0
-        val width = if (!drawable.getBounds().isEmpty) drawable.getBounds()
-            .width() else drawable.intrinsicWidth
-
-        val height = if (!drawable.getBounds().isEmpty) drawable.getBounds()
-            .height() else drawable.intrinsicHeight
-
-        // Now we check we are > 0
-        val bitmap = createBitmap(if (width <= 0) 1 else width, if (height <= 0) 1 else height)
-        val canvas = Canvas(bitmap)
-        drawable.setBounds(0, 0, canvas.width, canvas.height)
-        drawable.draw(canvas)
-
-        return bitmap
     }
 
 }

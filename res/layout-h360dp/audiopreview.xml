@@ -84,7 +84,7 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/playpause"
-                style="@style/Widget.Music.Button.Icon.Small.PlayPause"
+                style="@style/Widget.Music.Button.PlayPause"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:onClick="playPauseClicked"

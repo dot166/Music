@@ -3,16 +3,15 @@ package com.android.music.ui
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
-import androidx.annotation.OptIn
 import androidx.appcompat.widget.Toolbar
 import androidx.fragment.app.Fragment
-import androidx.media3.common.util.UnstableApi
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
 import com.android.music.R
 import com.android.music.playback.MusicService
 import com.android.music.ui.fragment.AlbumsFragment
 import com.android.music.ui.fragment.ArtistsFragment
+import com.android.music.ui.fragment.GenresFragment
 import com.android.music.ui.fragment.NowPlayingFragment
 import com.android.music.ui.fragment.SongsFragment
 import com.google.android.material.tabs.TabLayout
@@ -36,7 +35,7 @@ class MusicActivity : jActivity() {
         val pager = findViewById<ViewPager2>(R.id.pager)
 
         pager.adapter = object : FragmentStateAdapter(this) {
-            override fun getItemCount() = 4
+            override fun getItemCount() = 5
 
             override fun createFragment(position: Int): Fragment {
                 return when (position) {
@@ -49,7 +48,8 @@ class MusicActivity : jActivity() {
                         albumsFragment
                     }
                     2 -> ArtistsFragment()
-                    3 -> NowPlayingFragment()
+                    3 -> GenresFragment()
+                    4 -> NowPlayingFragment()
                     else -> error("Tab escaped the universe")
                 }
             }
@@ -60,7 +60,8 @@ class MusicActivity : jActivity() {
                 0 -> getString(R.string.tracks_title)
                 1 -> getString(R.string.albums_title)
                 2 -> getString(R.string.artists_title)
-                3 -> getString(R.string.nowplaying_title)
+                3 -> getString(R.string.genres_title)
+                4 -> getString(R.string.nowplaying_title)
                 else -> "???"
             }
 
@@ -68,8 +69,9 @@ class MusicActivity : jActivity() {
                 0 -> getDrawable(androidx.media3.session.R.drawable.media3_icon_playback_speed)
                 1 -> getDrawable(androidx.media3.session.R.drawable.media3_icon_album)
                 2 -> getDrawable(androidx.media3.session.R.drawable.media3_icon_artist)
-                3 -> getDrawable(androidx.media3.session.R.drawable.media3_icon_play)
-                else -> getDrawable(R.drawable.app_music)
+                3 -> getDrawable(androidx.media3.session.R.drawable.media3_icon_star_unfilled)
+                4 -> getDrawable(androidx.media3.session.R.drawable.media3_icon_play)
+                else -> getDrawable(androidx.media3.session.R.drawable.media3_icon_block)
             }
         }.attach()
     }
@@ -77,6 +79,11 @@ class MusicActivity : jActivity() {
         val pager = findViewById<ViewPager2>(R.id.pager)
         pager.currentItem = 0
         songsFragment.showAlbum(album)
+    }
+    fun onGenreSelected(genre: String) {
+        val pager = findViewById<ViewPager2>(R.id.pager)
+        pager.currentItem = 0
+        songsFragment.showGenre(genre)
     }
     fun onArtistSelected(artist: String) {
         val pager = findViewById<ViewPager2>(R.id.pager)

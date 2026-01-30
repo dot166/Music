@@ -1,18 +1,11 @@
 package com.android.music.playback
 
-import android.app.Notification
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.media.AudioAttributes
-import android.media.AudioFocusRequest
-import android.media.AudioManager
-import android.os.Build
-import androidx.media3.common.util.UnstableApi
+import android.app.PendingIntent
+import android.content.Intent
 import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.session.DefaultMediaNotificationProvider
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
-import androidx.media3.ui.PlayerNotificationManager
+import com.android.music.ui.MusicActivity
 
 class MusicService : MediaSessionService() {
 
@@ -25,6 +18,8 @@ class MusicService : MediaSessionService() {
         player = ExoPlayer.Builder(this).build()
 
         session = MediaSession.Builder(this, player)
+            .setSessionActivity(PendingIntent.getActivity(this, 0, Intent(this, MusicActivity::class.java),
+                PendingIntent.FLAG_IMMUTABLE))
             .build()
     }
 

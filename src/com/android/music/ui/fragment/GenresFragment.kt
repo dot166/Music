@@ -21,6 +21,7 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.android.music.R
 import com.android.music.playback.MusicService
+import com.android.music.ui.MusicActivity
 import com.android.music.ui.view.MediaAdapter
 import com.android.music.ui.view.MediaViewModel
 import com.google.android.material.progressindicator.CircularProgressIndicator
@@ -28,29 +29,11 @@ import com.google.common.util.concurrent.FutureCallback
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.MoreExecutors
 
-class SongsFragment: Fragment() {
+class GenresFragment: Fragment() {
 
     private lateinit var controller: MediaController
     private var viewModel: MediaViewModel? = null
     var adapter: MediaAdapter? = null
-    private var albumFilter: String? = null
-
-    fun showAlbum(album: String) {
-        genreFilter = null
-        albumFilter = album
-        reload()
-    }
-    private var genreFilter: String? = null
-
-    fun showGenre(genre: String) {
-        genreFilter = genre
-        albumFilter = null
-        reload()
-    }
-
-    private fun reload() {
-        viewModel!!.loadSongs(requireActivity().application, albumFilter, genreFilter)
-    }
 
     @SuppressLint("Recycle", "NotifyDataSetChanged")
     override fun onCreateView(
@@ -72,24 +55,13 @@ class SongsFragment: Fragment() {
             object : FutureCallback<MediaController> {
                 override fun onSuccess(ctrl: MediaController) {
                     controller = ctrl
-                    viewModel = ViewModelProvider(this@SongsFragment)[MediaViewModel::class.java]
-                    viewModel!!.getSongs()
+                    viewModel = ViewModelProvider(this@GenresFragment)[MediaViewModel::class.java]
+                    viewModel!!.getGenres()
                         .observe(viewLifecycleOwner, Observer { mediaItems: MutableList<MediaItem>? ->
                             if (mediaItems != null) {
                                 val recyclerView: RecyclerView = view.findViewById(R.id.recycler_view)
                                 adapter = MediaAdapter(mediaItems) { item ->
-                                    controller.setMediaItem(item, true)
-                                    val mediaItemsFiltered = mutableListOf<MediaItem>()
-                                    for (mediaItem in mediaItems) {
-                                        if (mediaItem != item) {
-                                            mediaItemsFiltered.add(mediaItem)
-                                        }
-                                    }
-                                    for (mediaItem in mediaItemsFiltered) {
-                                        controller.addMediaItem(mediaItem)
-                                    }
-                                    controller.prepare()
-                                    controller.play()
+                                    (activity!! as MusicActivity).onGenreSelected(item.mediaMetadata.title.toString())
                                 }
                                 adapter!!.notifyDataSetChanged()
                                 recyclerView.setLayoutManager(LinearLayoutManager(context))
@@ -99,7 +71,7 @@ class SongsFragment: Fragment() {
                                 swipeRefreshLayout!!.isRefreshing = false
                             }
                         })
-                    viewModel!!.loadSongs(activity!!.application)
+                    viewModel!!.loadGenres(activity!!.application)
                 }
 
                 override fun onFailure(t: Throwable) {
@@ -121,7 +93,7 @@ class SongsFragment: Fragment() {
             }
             swipeRefreshLayout.isRefreshing = true
             progressBar.visibility = View.VISIBLE
-            viewModel!!.loadSongs(requireActivity().application)
+            viewModel!!.loadGenres(requireActivity().application)
         }
         return view
     }
