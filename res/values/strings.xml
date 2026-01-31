@@ -331,6 +331,7 @@
     <string name="message_seekbar">Setting Seekbar max to %d sec</string>
     <string name="unknown_genre_name">Unknown genre</string>
     <string name="genres_title">Genres</string>
+    <string name="refresh_library">Refresh Library</string>
 
 </resources>
 

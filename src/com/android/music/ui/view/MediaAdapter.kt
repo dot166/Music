@@ -29,7 +29,7 @@ RecyclerView.Adapter<MediaAdapter.ViewHolder>() {
             val bitmap = BitmapFactory.decodeByteArray(artBytes, 0, artBytes.size)
             viewHolder.album_art.setImageBitmap(bitmap)
         } else {
-            viewHolder.album_art.setImageResource(R.drawable.albumart_mp_unknown)
+            viewHolder.album_art.setImageResource(R.drawable.def_art)
         }
 
         viewHolder.title.isSelected = true

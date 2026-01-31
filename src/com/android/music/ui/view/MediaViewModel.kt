@@ -1,13 +1,16 @@
 package com.android.music.ui.view
 
 import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
 import androidx.media3.common.MediaItem
 import com.android.music.model.MusicRepository
 
-class MediaViewModel() : ViewModel() {
+class MediaViewModel(application: Application) : AndroidViewModel(application) {
+    private val _genreFilter = MutableLiveData<String?>(null)
+    private val _albumFilter = MutableLiveData<String?>(null)
+    private val _artistFilter = MutableLiveData<String?>(null)
     private val songsMap: MutableLiveData<MutableList<MediaItem>> =
         MutableLiveData<MutableList<MediaItem>>()
 
@@ -15,9 +18,9 @@ class MediaViewModel() : ViewModel() {
         return songsMap
     }
 
-    fun loadSongs(application: Application, album: String? = null, genre: String? = null) {
-        val repository = MusicRepository.getInstance(application)
-        val mediaItems: MutableList<MediaItem> = repository.loadSongs(album, genre)
+    fun loadSongs() {
+        val repository = MusicRepository.getInstance(getApplication())
+        val mediaItems: MutableList<MediaItem> = repository.loadSongs(_albumFilter.value, _artistFilter.value, _genreFilter.value)
         songsMap.postValue(mediaItems)
     }
     private val albumsMap: MutableLiveData<MutableList<MediaItem>> =
@@ -27,11 +30,20 @@ class MediaViewModel() : ViewModel() {
         return albumsMap
     }
 
-    fun loadAlbums(application: Application, artist: String? = null) {
-        val repository = MusicRepository.getInstance(application)
-        val mediaItems: MutableList<MediaItem> = repository.loadAlbums(artist)
+    fun loadAlbums(album: String? = null) {
+        val repository = MusicRepository.getInstance(getApplication())
+        val mediaItems: MutableList<MediaItem> = repository.loadAlbums(album)
         albumsMap.postValue(mediaItems)
     }
+
+    fun setAlbumFilter(album: String?) {
+        _albumFilter.value = album
+    }
+
+    fun getAlbumFilter(): String? {
+        return _albumFilter.value
+    }
+
     private val artistsMap: MutableLiveData<MutableList<MediaItem>> =
         MutableLiveData<MutableList<MediaItem>>()
 
@@ -39,11 +51,20 @@ class MediaViewModel() : ViewModel() {
         return artistsMap
     }
 
-    fun loadArtists(application: Application) {
-        val repository = MusicRepository.getInstance(application)
-        val mediaItems: MutableList<MediaItem> = repository.loadArtists()
+    fun loadArtists(artist: String? = null) {
+        val repository = MusicRepository.getInstance(getApplication())
+        val mediaItems: MutableList<MediaItem> = repository.loadArtists(artist)
         artistsMap.postValue(mediaItems)
     }
+
+    fun setArtistFilter(artist: String?) {
+        _artistFilter.value = artist
+    }
+
+    fun getArtistFilter(): String? {
+        return _artistFilter.value
+    }
+
     private val genreMap: MutableLiveData<MutableList<MediaItem>> =
         MutableLiveData<MutableList<MediaItem>>()
 
@@ -51,9 +72,18 @@ class MediaViewModel() : ViewModel() {
         return genreMap
     }
 
-    fun loadGenres(application: Application) {
-        val repository = MusicRepository.getInstance(application)
-        val mediaItems: MutableList<MediaItem> = repository.loadGenres()
+    fun loadGenres(genre: String? = null) {
+        val repository = MusicRepository.getInstance(getApplication())
+        val mediaItems: MutableList<MediaItem> = repository.loadGenres(genre)
         genreMap.postValue(mediaItems)
     }
+
+    fun setGenreFilter(genre: String?) {
+        _genreFilter.value = genre
+    }
+
+    fun getGenreFilter(): String? {
+        return _genreFilter.value
+    }
+
 }

@@ -7,18 +7,15 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.annotation.OptIn
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.media3.common.MediaItem
-import androidx.media3.common.util.UnstableApi
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
 import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.android.music.R
 import com.android.music.playback.MusicService
 import com.android.music.ui.MusicActivity
@@ -47,7 +44,6 @@ class ArtistsFragment: Fragment() {
         val future = MediaController.Builder(requireContext(), token)
             .buildAsync()
         val progressBar = view.findViewById<CircularProgressIndicator>(R.id.progress)
-        val swipeRefreshLayout = view.findViewById<SwipeRefreshLayout>(R.id.swipe_layout)
         progressBar!!.visibility = View.VISIBLE
 
         Futures.addCallback(
@@ -68,10 +64,9 @@ class ArtistsFragment: Fragment() {
                                 recyclerView.setItemAnimator(DefaultItemAnimator())
                                 recyclerView.adapter = adapter
                                 progressBar.visibility = View.GONE
-                                swipeRefreshLayout!!.isRefreshing = false
                             }
                         })
-                    viewModel!!.loadArtists(activity!!.application)
+                    viewModel!!.loadArtists()
                 }
 
                 override fun onFailure(t: Throwable) {
@@ -80,21 +75,16 @@ class ArtistsFragment: Fragment() {
             },
             MoreExecutors.directExecutor()
         )
-
-        swipeRefreshLayout!!.setColorSchemeColors(
-            requireContext().obtainStyledAttributes(intArrayOf(androidx.appcompat.R.attr.colorPrimary))
-                .getColor(0, 0)
-        )
-        swipeRefreshLayout.canChildScrollUp()
-        swipeRefreshLayout.setOnRefreshListener {
-            if (adapter != null) {
-                adapter!!.musicList.clear()
-                adapter!!.notifyDataSetChanged()
-            }
-            swipeRefreshLayout.isRefreshing = true
-            progressBar.visibility = View.VISIBLE
-            viewModel!!.loadArtists(requireActivity().application)
-        }
         return view
+    }
+
+    fun refresh() {
+        val progressBar = requireView().findViewById<CircularProgressIndicator>(R.id.progress)
+        if (adapter != null) {
+            adapter!!.musicList.clear()
+            adapter!!.notifyDataSetChanged()
+        }
+        progressBar.visibility = View.VISIBLE
+        viewModel!!.loadArtists()
     }
 }

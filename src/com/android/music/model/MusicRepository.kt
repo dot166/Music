@@ -3,14 +3,19 @@ package com.android.music.model
 import android.annotation.SuppressLint
 import android.content.ContentUris
 import android.content.Context
+import android.content.SharedPreferences
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.provider.MediaStore
 import android.provider.OpenableColumns
+import android.util.Log
+import androidx.core.content.edit
+import androidx.core.net.toUri
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
+import androidx.media3.common.Player
+import androidx.preference.PreferenceManager
 import com.android.music.R
-
 
 class MusicRepository private constructor(context: Context) {
 
@@ -25,9 +30,41 @@ class MusicRepository private constructor(context: Context) {
             }
     }
 
+    fun getGenreId(name: String): Long? {
+        val c = appContext.contentResolver.query(
+            MediaStore.Audio.Genres.EXTERNAL_CONTENT_URI,
+            arrayOf(MediaStore.Audio.Genres._ID),
+            "${MediaStore.Audio.Genres.NAME} = ?",
+            arrayOf(name),
+            null
+        )
+
+        c?.use {
+            if (it.moveToFirst()) {
+                return it.getLong(0)
+            }
+        }
+        return null
+    }
+
     @SuppressLint("UseCompatLoadingForDrawables")
-    fun loadSongs(album: String?, genre: String?): MutableList<MediaItem> {
+    fun loadSongs(album: String?, artist: String?, genre: String?): MutableList<MediaItem> {
+        Log.d("ALBUM_DEBUG", "ALBUM = $album")
+        Log.d("ARTIST_DEBUG", "ARTIST = $artist")
+        Log.d("GENRE_DEBUG", "GENRE = $genre")
         val mediaItems = mutableListOf<MediaItem>()
+
+        val resolver = appContext.contentResolver
+        var baseUri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
+
+        if (genre != null) {
+            val genreId = getGenreId(genre) ?: return mutableListOf()
+            baseUri = MediaStore.Audio.Genres.Members.getContentUri(
+                "external",
+                genreId
+            )
+        }
+
         val selectionParts = mutableListOf(
             "${MediaStore.Audio.Media.RELATIVE_PATH} LIKE ?"
         )
@@ -36,18 +73,18 @@ class MusicRepository private constructor(context: Context) {
         if (album != null) {
             selectionParts.add("${MediaStore.Audio.Media.ALBUM} = ?")
             args.add(album)
-        } else if (genre != null) {
-            selectionParts.add("${MediaStore.Audio.Media.GENRE} = ?")
-            args.add(genre)
+        } else if (artist != null) {
+            selectionParts.add("${MediaStore.Audio.Media.ARTIST} = ?")
+            args.add(artist)
         }
 
         val selection = selectionParts.joinToString(" AND ")
-        val cursor = appContext.contentResolver.query(
-            MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+        Log.d("GENRE_DEBUG", "Members URI = $baseUri")
+        val cursor = resolver.query(
+            baseUri,
             arrayOf(
                 MediaStore.Audio.Media._ID,
-                MediaStore.Audio.Media.TITLE,
-                MediaStore.Audio.Media.RELATIVE_PATH
+                MediaStore.Audio.Media.TITLE
             ),
             selection,
             args.toTypedArray(),
@@ -85,17 +122,15 @@ class MusicRepository private constructor(context: Context) {
     }
 
     @SuppressLint("UseCompatLoadingForDrawables")
-    fun loadAlbums(artist: String?): MutableList<MediaItem> {
+    fun loadAlbums(album: String?): MutableList<MediaItem> {
+        if (album != null) {
+            return loadSongs(album, null, null)
+        }
         val albums = mutableMapOf<String, MediaItem>()
         val selectionParts = mutableListOf(
             "${MediaStore.Audio.Media.RELATIVE_PATH} LIKE ?"
         )
         val args = mutableListOf("Music/%")
-
-        if (artist != null) {
-            selectionParts.add("${MediaStore.Audio.Media.ARTIST} = ?")
-            args.add(artist)
-        }
 
         val selection = selectionParts.joinToString(" AND ")
         val cursor = appContext.contentResolver.query(
@@ -153,7 +188,10 @@ class MusicRepository private constructor(context: Context) {
     }
 
     @SuppressLint("UseCompatLoadingForDrawables")
-    fun loadArtists(): MutableList<MediaItem> {
+    fun loadArtists(artist: String?): MutableList<MediaItem> {
+        if (artist != null) {
+            return loadSongs(null, artist, null)
+        }
         val artists = mutableMapOf<String, MediaItem>()
         val selection = "${MediaStore.Audio.Media.RELATIVE_PATH} LIKE ?"
         val selectionArgs = arrayOf("Music/%")
@@ -196,7 +234,10 @@ class MusicRepository private constructor(context: Context) {
     }
 
     @SuppressLint("UseCompatLoadingForDrawables")
-    fun loadGenres(): MutableList<MediaItem> {
+    fun loadGenres(genre: String?): MutableList<MediaItem> {
+        if (genre != null) {
+            return loadSongs(null, null, genre)
+        }
         val genres = mutableMapOf<String, MediaItem>()
         val selection = "${MediaStore.Audio.Media.RELATIVE_PATH} LIKE ?"
         val selectionArgs = arrayOf("Music/%")
@@ -263,4 +304,77 @@ class MusicRepository private constructor(context: Context) {
         return uri.toString()
     }
 
+}
+
+fun Player.saveQueue(prefs: SharedPreferences, mediaItems: MutableList<MediaItem>, album: String?, artist: String?, genre: String?) {
+    val joined = mediaItems
+        .mapNotNull { it.localConfiguration?.uri?.toString() }
+        .joinToString("|")
+
+    prefs.edit {
+        putString("queue_uris", joined)
+        putInt("queue_index", currentMediaItemIndex)
+        putBoolean("queue_shuffle", shuffleModeEnabled)
+        putInt("queue_repeat", repeatMode)
+        putString("queue_filter_album", album)
+        putString("queue_filter_artist", artist)
+        putString("queue_filter_genre", genre)
+    }
+}
+
+fun Player.restoreQueue(ctx: Context) {
+    val prefs = PreferenceManager.getDefaultSharedPreferences(ctx)
+    val joined = prefs.getString("queue_uris", null) ?: return
+    var index = prefs.getInt("queue_index", 0)
+    val shuffle = prefs.getBoolean("queue_shuffle", false)
+    val repeat = prefs.getInt("queue_repeat", Player.REPEAT_MODE_OFF)
+    val album = prefs.getString("queue_filter_album", null)
+    val artist = prefs.getString("queue_filter_artist", null)
+    val genre = prefs.getString("queue_filter_genre", null)
+
+    var items = joined.split("|")
+        .filter { it.isNotBlank() }
+        .map { MediaItem.fromUri(it.toUri()) }
+
+    if (items.isEmpty()) return
+
+    val itemsFromDB = MusicRepository.getInstance(ctx).loadSongs(album, artist, genre)
+    if (itemsFromDB.isEmpty()) {
+        // ok..., what...
+        return
+    }
+
+    if (itemsFromDB.size != items.size) {
+        // ok, so library changed
+        index = if (itemsFromDB.contains(items[index].localConfiguration!!.uri)) {
+            itemsFromDB.indexOf(items[index].localConfiguration!!.uri)
+        } else {
+            // ah, right, the saved track is gone, bollocks, reset to track 0
+            0
+        }
+        prefs.edit {
+            putString("queue_uris", itemsFromDB
+                .mapNotNull { it.localConfiguration?.uri?.toString() }
+                .joinToString("|"))
+        }
+        items = itemsFromDB
+    }
+
+    setMediaItems(items, index, 0)
+    shuffleModeEnabled = shuffle
+    repeatMode = repeat
+    prepare()
+}
+
+fun MutableList<MediaItem>.contains(uri: Uri): Boolean {
+    return indexOf(uri) != -1
+}
+
+fun MutableList<MediaItem>.indexOf(uri: Uri): Int {
+    for (i in 0 until size) {
+        if (get(i).localConfiguration!!.uri.toString() == uri.toString()) {
+            return i
+        }
+    }
+    return -1
 }

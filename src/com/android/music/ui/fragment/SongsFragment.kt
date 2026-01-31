@@ -7,19 +7,18 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.annotation.OptIn
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.media3.common.MediaItem
-import androidx.media3.common.util.UnstableApi
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
+import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.android.music.R
+import com.android.music.model.saveQueue
 import com.android.music.playback.MusicService
 import com.android.music.ui.view.MediaAdapter
 import com.android.music.ui.view.MediaViewModel
@@ -33,23 +32,26 @@ class SongsFragment: Fragment() {
     private lateinit var controller: MediaController
     private var viewModel: MediaViewModel? = null
     var adapter: MediaAdapter? = null
-    private var albumFilter: String? = null
 
     fun showAlbum(album: String) {
-        genreFilter = null
-        albumFilter = album
-        reload()
+        viewModel!!.setGenreFilter(null)
+        viewModel!!.setArtistFilter(null)
+        viewModel!!.setAlbumFilter(album)
+        viewModel!!.loadSongs()
     }
-    private var genreFilter: String? = null
+
+    fun showArtist(artist: String) {
+        viewModel!!.setGenreFilter(null)
+        viewModel!!.setArtistFilter(artist)
+        viewModel!!.setAlbumFilter(null)
+        viewModel!!.loadSongs()
+    }
 
     fun showGenre(genre: String) {
-        genreFilter = genre
-        albumFilter = null
-        reload()
-    }
-
-    private fun reload() {
-        viewModel!!.loadSongs(requireActivity().application, albumFilter, genreFilter)
+        viewModel!!.setGenreFilter(genre)
+        viewModel!!.setArtistFilter(null)
+        viewModel!!.setAlbumFilter(null)
+        viewModel!!.loadSongs()
     }
 
     @SuppressLint("Recycle", "NotifyDataSetChanged")
@@ -64,7 +66,6 @@ class SongsFragment: Fragment() {
         val future = MediaController.Builder(requireContext(), token)
             .buildAsync()
         val progressBar = view.findViewById<CircularProgressIndicator>(R.id.progress)
-        val swipeRefreshLayout = view.findViewById<SwipeRefreshLayout>(R.id.swipe_layout)
         progressBar!!.visibility = View.VISIBLE
 
         Futures.addCallback(
@@ -78,28 +79,27 @@ class SongsFragment: Fragment() {
                             if (mediaItems != null) {
                                 val recyclerView: RecyclerView = view.findViewById(R.id.recycler_view)
                                 adapter = MediaAdapter(mediaItems) { item ->
-                                    controller.setMediaItem(item, true)
-                                    val mediaItemsFiltered = mutableListOf<MediaItem>()
-                                    for (mediaItem in mediaItems) {
-                                        if (mediaItem != item) {
-                                            mediaItemsFiltered.add(mediaItem)
-                                        }
-                                    }
-                                    for (mediaItem in mediaItemsFiltered) {
-                                        controller.addMediaItem(mediaItem)
-                                    }
+                                    val shuffle = controller.shuffleModeEnabled
+                                    val repeat = controller.repeatMode
+                                    val startIndex = mediaItems.indexOf(item)
+                                    if (startIndex == -1) return@MediaAdapter
+                                    controller.setMediaItems(mediaItems, startIndex, 0L)
                                     controller.prepare()
+                                    controller.shuffleModeEnabled = shuffle
+                                    controller.repeatMode = repeat
                                     controller.play()
+                                    controller.saveQueue(
+                                        PreferenceManager.getDefaultSharedPreferences(context!!),
+                                        mediaItems, viewModel!!.getAlbumFilter(), viewModel!!.getArtistFilter(), viewModel!!.getGenreFilter(),
+                                    )
                                 }
-                                adapter!!.notifyDataSetChanged()
                                 recyclerView.setLayoutManager(LinearLayoutManager(context))
                                 recyclerView.setItemAnimator(DefaultItemAnimator())
                                 recyclerView.adapter = adapter
                                 progressBar.visibility = View.GONE
-                                swipeRefreshLayout!!.isRefreshing = false
                             }
                         })
-                    viewModel!!.loadSongs(activity!!.application)
+                    viewModel!!.loadSongs()
                 }
 
                 override fun onFailure(t: Throwable) {
@@ -108,21 +108,19 @@ class SongsFragment: Fragment() {
             },
             MoreExecutors.directExecutor()
         )
-
-        swipeRefreshLayout!!.setColorSchemeColors(
-            requireContext().obtainStyledAttributes(intArrayOf(androidx.appcompat.R.attr.colorPrimary))
-                .getColor(0, 0)
-        )
-        swipeRefreshLayout.canChildScrollUp()
-        swipeRefreshLayout.setOnRefreshListener {
-            if (adapter != null) {
-                adapter!!.musicList.clear()
-                adapter!!.notifyDataSetChanged()
-            }
-            swipeRefreshLayout.isRefreshing = true
-            progressBar.visibility = View.VISIBLE
-            viewModel!!.loadSongs(requireActivity().application)
-        }
         return view
+    }
+
+    fun refresh() {
+        val progressBar = requireView().findViewById<CircularProgressIndicator>(R.id.progress)
+        if (adapter != null) {
+            adapter!!.musicList.clear()
+            adapter!!.notifyDataSetChanged()
+        }
+        progressBar.visibility = View.VISIBLE
+        viewModel!!.setGenreFilter(null)
+        viewModel!!.setArtistFilter(null)
+        viewModel!!.setAlbumFilter(null)
+        viewModel!!.loadSongs()
     }
 }

@@ -1,27 +1,61 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <com.google.android.material.appbar.MaterialToolbar
-        android:layout_width="match_parent"
-        android:layout_height="?actionBarSize"
-        android:background="@drawable/ui_item_bg"
-        app:titleCentered="true"
-        app:subtitleCentered="true"
-        android:id="@+id/actionbar"/>
-
-    <androidx.viewpager2.widget.ViewPager2
-        android:id="@+id/pager"
+    <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@id/actionbar"
-        android:layout_above="@id/tabs"/>
+        android:layout_marginBottom="?actionBarSize">
 
-    <com.google.android.material.tabs.TabLayout
-        android:id="@+id/tabs"
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/actionbar"
+            android:layout_width="match_parent"
+            android:layout_height="?actionBarSize"/>
+
+        <com.google.android.material.tabs.TabLayout
+            android:id="@+id/tabs"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/actionbar"/>
+
+        <androidx.viewpager2.widget.ViewPager2
+            android:id="@+id/pager"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_below="@id/tabs"/>
+    </RelativeLayout>
+
+    <FrameLayout
+        android:id="@+id/playback_sheet"
         android:layout_width="match_parent"
-        android:layout_height="?actionBarSize"
-        android:layout_alignParentBottom="true"/>
-</RelativeLayout>
+        android:layout_height="match_parent"
+        android:clickable="true"
+        android:focusable="true"
+        app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior"
+        app:behavior_peekHeight="?actionBarSize"
+        app:behavior_hideable="true">
+        <RelativeLayout
+            android:background="?android:windowBackground"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            tools:ignore="UselessParent">
+
+            <com.google.android.material.bottomsheet.BottomSheetDragHandleView
+                android:id="@+id/handle"
+                android:layout_width="match_parent"
+                android:layout_height="?actionBarSize"/>
+
+            <androidx.fragment.app.FragmentContainerView
+                android:id="@+id/playback_panel_fragment"
+                android:layout_below="@id/handle"
+                android:name="com.android.music.ui.fragment.NowPlayingFragment"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"/>
+        </RelativeLayout>
+    </FrameLayout>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

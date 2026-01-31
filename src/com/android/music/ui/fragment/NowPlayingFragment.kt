@@ -13,6 +13,7 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.content.edit
 import androidx.fragment.app.Fragment
 import androidx.media3.common.Player
 import androidx.media3.common.Player.REPEAT_MODE_ALL
@@ -20,8 +21,10 @@ import androidx.media3.common.Player.REPEAT_MODE_OFF
 import androidx.media3.common.Player.REPEAT_MODE_ONE
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
+import androidx.preference.PreferenceManager
 import com.android.music.R
 import com.android.music.playback.MusicService
+import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.slider.Slider
 import com.google.common.util.concurrent.FutureCallback
@@ -74,7 +77,7 @@ class NowPlayingFragment: Fragment() {
                 val bitmap = BitmapFactory.decodeByteArray(artBytes, 0, artBytes.size)
                 layoutMain.findViewById<ImageView>(R.id.imageView)!!.setImageBitmap(bitmap)
             } else {
-                layoutMain.findViewById<ImageView>(R.id.imageView)!!.setImageResource(R.drawable.albumart_mp_unknown)
+                layoutMain.findViewById<ImageView>(R.id.imageView)!!.setImageResource(R.drawable.def_art)
             }
             mDuration = controller.duration.coerceAtLeast(0L)
             if (mDuration == 0L) {
@@ -85,6 +88,13 @@ class NowPlayingFragment: Fragment() {
                 val pos = controller.currentPosition.toFloat()
                 val clamped = pos.coerceIn(0f, mSeekBar.valueTo)
                 mSeekBar.value = clamped
+            }
+            if (context != null) {
+                PreferenceManager.getDefaultSharedPreferences(context!!).edit {
+                    putInt("queue_index", controller.currentMediaItemIndex)
+                    putBoolean("queue_shuffle", controller.shuffleModeEnabled)
+                    putInt("queue_repeat", controller.repeatMode)
+                }
             }
             mHandled.post(updateThread)
         }
@@ -179,7 +189,11 @@ class NowPlayingFragment: Fragment() {
                         controller.seekToNextMediaItem()
                     }
                     layoutMain.findViewById<MaterialButton>(R.id.button8).setOnClickListener { v ->
-                        controller.shuffleModeEnabled = !controller.shuffleModeEnabled
+                        if (controller.shuffleModeEnabled) {
+                            controller.shuffleModeEnabled = false
+                        } else {
+                            reshuffle(controller)
+                        }
                         v.isActivated = controller.shuffleModeEnabled
                         (v as MaterialButton).setIconResource(
                             when (controller.shuffleModeEnabled) {
@@ -231,4 +245,29 @@ class NowPlayingFragment: Fragment() {
             controller.seekTo(target)
         }
     }
+    fun reshuffle(controller: MediaController) {
+        val currentIndex = controller.currentMediaItemIndex
+        val positionMs = controller.currentPosition
+
+        val items = buildList {
+            for (i in 0 until controller.mediaItemCount) {
+                add(controller.getMediaItemAt(i))
+            }
+        }
+
+        controller.setMediaItems(items, currentIndex, positionMs)
+        controller.shuffleModeEnabled = true
+        controller.prepare()
+    }
+
+    fun loadUx(isExpanded: Boolean) {
+        val toolbar = requireView().findViewById<MaterialToolbar>(R.id.tool)
+
+        if (isExpanded) {
+            toolbar.visibility = View.VISIBLE
+        } else {
+            toolbar.visibility = View.GONE
+        }
+    }
+
 }
