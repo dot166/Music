@@ -7,6 +7,13 @@ android_app {
     name: "Music",
     srcs: ["src/**/*.kt"],
     sdk_version: "current",
+    static_libs: [
+        "j.Lib",
+        "music_androidx.media3.media3-common",
+        "music_androidx.media3.media3-exoplayer",
+        "music_androidx.media3.media3-session",
+        "music_androidx.media3.media3-ui",
+    ],
     product_specific: true,
     optimize: {
         proguard_flags_files: ["proguard.flags"],
