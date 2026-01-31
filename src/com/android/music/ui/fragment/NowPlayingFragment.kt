@@ -24,7 +24,6 @@ import androidx.media3.session.SessionToken
 import androidx.preference.PreferenceManager
 import com.android.music.R
 import com.android.music.playback.MusicService
-import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.slider.Slider
 import com.google.common.util.concurrent.FutureCallback
@@ -258,16 +257,6 @@ class NowPlayingFragment: Fragment() {
         controller.setMediaItems(items, currentIndex, positionMs)
         controller.shuffleModeEnabled = true
         controller.prepare()
-    }
-
-    fun loadUx(isExpanded: Boolean) {
-        val toolbar = requireView().findViewById<MaterialToolbar>(R.id.tool)
-
-        if (isExpanded) {
-            toolbar.visibility = View.VISIBLE
-        } else {
-            toolbar.visibility = View.GONE
-        }
     }
 
 }

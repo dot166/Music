@@ -6,14 +6,20 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/layoutMain">
 
-    <com.google.android.material.appbar.MaterialToolbar
-        android:id="@+id/tool"
-        app:titleCentered="true"
-        app:title="@string/nowplaying_title"
-        android:visibility="gone"
+    <FrameLayout
+        android:id="@+id/handle"
         app:layout_constraintTop_toTopOf="parent"
         android:layout_width="match_parent"
-        android:layout_height="?actionBarSize"/>
+        android:layout_height="?actionBarSize">
+        <com.google.android.material.bottomsheet.BottomSheetDragHandleView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"/>
+
+        <com.google.android.material.appbar.MaterialToolbar
+            app:title="@string/nowplaying_title"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"/>
+    </FrameLayout>
 
     <com.google.android.material.imageview.ShapeableImageView
         android:id="@+id/imageView"
@@ -24,7 +30,7 @@
         app:layout_constraintBottom_toTopOf="@id/layout"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tool"
+        app:layout_constraintTop_toBottomOf="@id/handle"
         app:layout_constraintVertical_chainStyle="packed"
         app:layout_constraintDimensionRatio="1"/>
 

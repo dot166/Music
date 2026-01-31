@@ -5,11 +5,8 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
-import android.view.View
-import android.widget.FrameLayout
 import androidx.appcompat.widget.Toolbar
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.FragmentContainerView
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
 import com.android.music.R
@@ -17,12 +14,7 @@ import com.android.music.playback.MusicService
 import com.android.music.ui.fragment.AlbumsFragment
 import com.android.music.ui.fragment.ArtistsFragment
 import com.android.music.ui.fragment.GenresFragment
-import com.android.music.ui.fragment.NowPlayingFragment
 import com.android.music.ui.fragment.SongsFragment
-import com.google.android.material.bottomsheet.BottomSheetBehavior
-import com.google.android.material.bottomsheet.BottomSheetBehavior.BottomSheetCallback
-import com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
-import com.google.android.material.bottomsheet.BottomSheetDragHandleView
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
 import io.github.dot166.jlib.app.jActivity
@@ -76,28 +68,6 @@ class MusicActivity : jActivity() {
                 else -> getDrawable(androidx.media3.session.R.drawable.media3_icon_block)
             }
         }.attach()
-
-        val standardBottomSheet = findViewById<FrameLayout>(R.id.playback_sheet)
-        val standardBottomSheetBehavior = BottomSheetBehavior.from(standardBottomSheet)
-        standardBottomSheetBehavior.addBottomSheetCallback(object : BottomSheetCallback() {
-            override fun onStateChanged(bottomSheet: View, newState: Int) {
-                val handle = bottomSheet.findViewById<BottomSheetDragHandleView>(R.id.handle)
-                val fragment =
-                    bottomSheet.findViewById<FragmentContainerView>(R.id.playback_panel_fragment)
-                        .getFragment<NowPlayingFragment>()
-
-                if (newState == STATE_EXPANDED) {
-                    handle.visibility = View.GONE
-                    fragment.loadUx(true)
-                } else {
-                    handle.visibility = View.VISIBLE
-                    fragment.loadUx(false)
-                }
-            }
-
-            override fun onSlide(bottomSheet: View, slideOffset: Float) {
-            }
-        })
     }
     fun onAlbumSelected(album: String) {
         val pager = findViewById<ViewPager2>(R.id.pager)
