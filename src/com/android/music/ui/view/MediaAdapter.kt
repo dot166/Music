@@ -13,7 +13,7 @@ import com.android.music.R
 class MediaAdapter(val musicList: MutableList<MediaItem>, val action: (item: MediaItem) -> Unit) :
 RecyclerView.Adapter<MediaAdapter.ViewHolder>() {
     override fun onCreateViewHolder(viewGroup: ViewGroup, i: Int): ViewHolder {
-        val v = LayoutInflater.from(viewGroup.context).inflate(R.layout.song_item, viewGroup, false)
+        val v = LayoutInflater.from(viewGroup.context).inflate(R.layout.media_item, viewGroup, false)
         return ViewHolder(v)
     }
 
@@ -27,9 +27,9 @@ RecyclerView.Adapter<MediaAdapter.ViewHolder>() {
         val artBytes = currentSong.mediaMetadata.artworkData
         if (artBytes != null) {
             val bitmap = BitmapFactory.decodeByteArray(artBytes, 0, artBytes.size)
-            viewHolder.album_art.setImageBitmap(bitmap)
+            viewHolder.albumArt.setImageBitmap(bitmap)
         } else {
-            viewHolder.album_art.setImageResource(R.drawable.def_art)
+            viewHolder.albumArt.setImageResource(R.drawable.def_art)
         }
 
         viewHolder.title.isSelected = true
@@ -47,6 +47,6 @@ RecyclerView.Adapter<MediaAdapter.ViewHolder>() {
     class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         var title: TextView = itemView.findViewById(R.id.song_name)
         var artist: TextView = itemView.findViewById(R.id.song_info)
-        var album_art: ImageView = itemView.findViewById(R.id.song_album_cover)
+        var albumArt: ImageView = itemView.findViewById(R.id.song_album_cover)
     }
 }
