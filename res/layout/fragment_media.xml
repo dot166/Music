@@ -17,4 +17,15 @@
         android:layout_centerHorizontal="true"
         />
 
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fab_shuffle"
+        android:visibility="gone"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentEnd="true"
+        android:layout_margin="@dimen/spacing_small"
+        android:contentDescription="@string/shuffle_displayed_songs"
+        android:src="@drawable/media3_icon_shuffle_on"/>
+
 </RelativeLayout>

@@ -6,6 +6,8 @@ import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
+import android.view.View.GONE
+import android.view.View.VISIBLE
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
@@ -22,10 +24,12 @@ import com.android.music.model.saveQueue
 import com.android.music.playback.MusicService
 import com.android.music.ui.view.MediaAdapter
 import com.android.music.ui.view.MediaViewModel
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.progressindicator.CircularProgressIndicator
 import com.google.common.util.concurrent.FutureCallback
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.MoreExecutors
+import kotlin.random.Random
 
 class SongsFragment: Fragment() {
 
@@ -61,12 +65,28 @@ class SongsFragment: Fragment() {
         savedInstanceState: Bundle?
     ): View {
         val view = inflater.inflate(R.layout.fragment_media, container, false)
+        view.findViewById<FloatingActionButton>(R.id.fab_shuffle).setOnClickListener { _ ->
+            val recyclerView: RecyclerView = view.findViewById(R.id.recycler_view)
+            val mediaItems = (recyclerView.adapter!! as MediaAdapter).musicList
+            val startIndex = Random.nextInt(mediaItems.size)
+            val repeat = controller.repeatMode
+            if (startIndex == -1) return@setOnClickListener
+            controller.setMediaItems(mediaItems, startIndex, 0L)
+            controller.prepare()
+            controller.shuffleModeEnabled = true
+            controller.repeatMode = repeat
+            controller.play()
+            controller.saveQueue(
+                PreferenceManager.getDefaultSharedPreferences(requireContext()),
+                mediaItems, viewModel!!.getAlbumFilter(), viewModel!!.getArtistFilter(), viewModel!!.getGenreFilter(),
+            )
+        }
         val token = SessionToken(requireContext(), ComponentName(requireContext(), MusicService::class.java))
 
         val future = MediaController.Builder(requireContext(), token)
             .buildAsync()
         val progressBar = view.findViewById<CircularProgressIndicator>(R.id.progress)
-        progressBar!!.visibility = View.VISIBLE
+        progressBar!!.visibility = VISIBLE
 
         Futures.addCallback(
             future,
@@ -96,7 +116,8 @@ class SongsFragment: Fragment() {
                                 recyclerView.setLayoutManager(LinearLayoutManager(context))
                                 recyclerView.setItemAnimator(DefaultItemAnimator())
                                 recyclerView.adapter = adapter
-                                progressBar.visibility = View.GONE
+                                progressBar.visibility = GONE
+                                view.findViewById<FloatingActionButton>(R.id.fab_shuffle).visibility = VISIBLE
                             }
                         })
                     viewModel!!.loadSongs()
@@ -111,13 +132,15 @@ class SongsFragment: Fragment() {
         return view
     }
 
+    @SuppressLint("NotifyDataSetChanged")
     fun refresh() {
         val progressBar = requireView().findViewById<CircularProgressIndicator>(R.id.progress)
         if (adapter != null) {
             adapter!!.musicList.clear()
             adapter!!.notifyDataSetChanged()
         }
-        progressBar.visibility = View.VISIBLE
+        requireView().findViewById<FloatingActionButton>(R.id.fab_shuffle).visibility = GONE
+        progressBar.visibility = VISIBLE
         viewModel!!.setGenreFilter(null)
         viewModel!!.setArtistFilter(null)
         viewModel!!.setAlbumFilter(null)
