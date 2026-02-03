@@ -102,6 +102,9 @@
 
             <com.google.android.material.slider.Slider
                 android:id="@+id/seekBar"
+                app:labelBehavior="gone"
+                app:tickVisible="false"
+                app:trackStopIndicatorSize="0dp"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content" />
 
