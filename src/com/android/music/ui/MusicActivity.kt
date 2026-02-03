@@ -51,6 +51,26 @@ class MusicActivity : jActivity() {
             }
         }
 
+        tabs.addOnTabSelectedListener(object: TabLayout.OnTabSelectedListener {
+            override fun onTabSelected(tab: TabLayout.Tab?) {
+                // implemented by pager
+            }
+
+            override fun onTabUnselected(tab: TabLayout.Tab?) {
+                // no-op
+            }
+
+            override fun onTabReselected(tab: TabLayout.Tab?) {
+                when (pager.currentItem) {
+                    0 -> (supportFragmentManager.findFragmentByTag("f" + pager.currentItem) as SongsFragment).refresh()
+                    1 -> (supportFragmentManager.findFragmentByTag("f" + pager.currentItem) as AlbumsFragment).refresh()
+                    2 -> (supportFragmentManager.findFragmentByTag("f" + pager.currentItem) as ArtistsFragment).refresh()
+                    3 -> (supportFragmentManager.findFragmentByTag("f" + pager.currentItem) as GenresFragment).refresh()
+                }
+            }
+
+        })
+
         TabLayoutMediator(tabs, pager) { tab, position ->
             tab.text = when (position) {
                 0 -> getString(R.string.tracks_title)
