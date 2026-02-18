@@ -26,6 +26,7 @@ class MusicService : MediaSessionService() {
             .setAudioAttributes(audioAttributes, true)
             .setHandleAudioBecomingNoisy(true)
             .build()
+        player.experimentalSetOffloadSchedulingEnabled(true)
         player.restoreQueue(this)
 
         session = MediaSession.Builder(this, player)

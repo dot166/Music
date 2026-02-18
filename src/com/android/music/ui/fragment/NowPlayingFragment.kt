@@ -15,6 +15,8 @@ import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.edit
 import androidx.fragment.app.Fragment
+import androidx.media3.common.MediaItem
+import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
 import androidx.media3.common.Player.REPEAT_MODE_ALL
 import androidx.media3.common.Player.REPEAT_MODE_OFF
@@ -53,31 +55,6 @@ class NowPlayingFragment: Fragment() {
                 return  // just in case
             }
             updatePlayPause()
-            layoutMain.findViewById<TextView>(R.id.now_playing_title)!!.text = controller.getMediaMetadata().title
-            layoutMain.findViewById<TextView>(R.id.now_playing_artist)!!.text = controller.getMediaMetadata().artist
-            layoutMain.findViewById<MaterialButton>(R.id.button8).isActivated = controller.shuffleModeEnabled
-            layoutMain.findViewById<MaterialButton>(R.id.button8).setIconResource(
-                when (controller.shuffleModeEnabled) {
-                    true -> androidx.media3.session.R.drawable.media3_icon_shuffle_on
-                    false -> androidx.media3.session.R.drawable.media3_icon_shuffle_off
-                }
-            )
-            layoutMain.findViewById<MaterialButton>(R.id.button4).isActivated = controller.repeatMode != REPEAT_MODE_OFF
-            layoutMain.findViewById<MaterialButton>(R.id.button4).setIconResource(
-                when (controller.repeatMode) {
-                    REPEAT_MODE_OFF -> androidx.media3.session.R.drawable.media3_icon_repeat_off
-                    REPEAT_MODE_ALL -> androidx.media3.session.R.drawable.media3_icon_repeat_all
-                    REPEAT_MODE_ONE -> androidx.media3.session.R.drawable.media3_icon_repeat_one
-                    else -> androidx.media3.session.R.drawable.media3_icon_repeat_off
-                }
-            )
-            val artBytes = controller.mediaMetadata.artworkData
-            if (artBytes != null) {
-                val bitmap = BitmapFactory.decodeByteArray(artBytes, 0, artBytes.size)
-                layoutMain.findViewById<ImageView>(R.id.imageView)!!.setImageBitmap(bitmap)
-            } else {
-                layoutMain.findViewById<ImageView>(R.id.imageView)!!.setImageResource(R.drawable.def_art)
-            }
             mDuration = controller.duration.coerceAtLeast(0L)
             if (mDuration == 0L) {
                 mDuration = 1L
@@ -88,14 +65,7 @@ class NowPlayingFragment: Fragment() {
                 val clamped = pos.coerceIn(0f, mSeekBar.valueTo)
                 mSeekBar.value = clamped
             }
-            if (context != null) {
-                PreferenceManager.getDefaultSharedPreferences(context!!).edit {
-                    putInt("queue_index", controller.currentMediaItemIndex)
-                    putBoolean("queue_shuffle", controller.shuffleModeEnabled)
-                    putInt("queue_repeat", controller.repeatMode)
-                }
-            }
-            mHandled.post(updateThread)
+            mHandled.postDelayed(updateThread, 1000)
         }
     }
 
@@ -201,6 +171,69 @@ class NowPlayingFragment: Fragment() {
                             }
                         )
                     }
+                    controller.addListener(object : Player.Listener {
+                        override fun onMediaMetadataChanged(mediaMetadata: MediaMetadata) {
+                            val artBytes = mediaMetadata.artworkData
+                            if (artBytes != null) {
+                                val options = BitmapFactory.Options().apply {
+                                    inJustDecodeBounds = true
+                                }
+                                BitmapFactory.decodeByteArray(artBytes, 0, artBytes.size, options)
+
+                                options.inSampleSize = calculateSampleSize(options)
+                                options.inJustDecodeBounds = false
+
+                                val bitmap = BitmapFactory.decodeByteArray(artBytes, 0, artBytes.size, options)
+                                layoutMain.findViewById<ImageView>(R.id.imageView)!!.setImageBitmap(bitmap)
+                            } else {
+                                layoutMain.findViewById<ImageView>(R.id.imageView)!!.setImageResource(R.drawable.def_art)
+                            }
+                            layoutMain.findViewById<TextView>(R.id.now_playing_title)!!.text = mediaMetadata.title
+                            layoutMain.findViewById<TextView>(R.id.now_playing_artist)!!.text = mediaMetadata.artist
+                        }
+
+                        override fun onMediaItemTransition(item: MediaItem?, reason: Int) {
+                            if (context != null) {
+                                PreferenceManager.getDefaultSharedPreferences(context!!).edit {
+                                    putInt("queue_index", controller.currentMediaItemIndex)
+                                }
+                            }
+                        }
+
+                        override fun onShuffleModeEnabledChanged(shuffleModeEnabled: Boolean) {
+                            layoutMain.findViewById<MaterialButton>(R.id.button8).isActivated = shuffleModeEnabled
+                            layoutMain.findViewById<MaterialButton>(R.id.button8).setIconResource(
+                                when (shuffleModeEnabled) {
+                                    true -> androidx.media3.session.R.drawable.media3_icon_shuffle_on
+                                    false -> androidx.media3.session.R.drawable.media3_icon_shuffle_off
+                                }
+                            )
+
+                            if (context != null) {
+                                PreferenceManager.getDefaultSharedPreferences(context!!).edit {
+                                    putBoolean("queue_shuffle", shuffleModeEnabled)
+                                }
+                            }
+                        }
+
+                        override fun onRepeatModeChanged(repeatMode: Int) {
+                            layoutMain.findViewById<MaterialButton>(R.id.button4).isActivated = repeatMode != REPEAT_MODE_OFF
+                            layoutMain.findViewById<MaterialButton>(R.id.button4).setIconResource(
+                                when (repeatMode) {
+                                    REPEAT_MODE_OFF -> androidx.media3.session.R.drawable.media3_icon_repeat_off
+                                    REPEAT_MODE_ALL -> androidx.media3.session.R.drawable.media3_icon_repeat_all
+                                    REPEAT_MODE_ONE -> androidx.media3.session.R.drawable.media3_icon_repeat_one
+                                    else -> androidx.media3.session.R.drawable.media3_icon_repeat_off
+                                }
+                            )
+
+                            if (context != null) {
+                                PreferenceManager.getDefaultSharedPreferences(context!!).edit {
+                                    putInt("queue_repeat", repeatMode)
+                                }
+                            }
+                        }
+                    })
                     mHandled.post(updateThread)
                 }
 
@@ -215,11 +248,13 @@ class NowPlayingFragment: Fragment() {
 
     override fun onPause() {
         super.onPause()
+        mHandled.removeCallbacks(updateThread)
         mUiPaused = true
     }
 
     override fun onResume() {
         super.onResume()
+        mHandled.post(updateThread)
         mUiPaused = false
     }
 
@@ -257,6 +292,25 @@ class NowPlayingFragment: Fragment() {
         controller.setMediaItems(items, currentIndex, positionMs)
         controller.shuffleModeEnabled = true
         controller.prepare()
+    }
+
+    private fun calculateSampleSize(
+        options: BitmapFactory.Options
+    ): Int {
+        val (height, width) = options.outHeight to options.outWidth
+        var inSampleSize = 1
+
+        if (height > 512 || width > 512) {
+            val halfHeight = height / 2
+            val halfWidth = width / 2
+
+            while ((halfHeight / inSampleSize) >= 512 &&
+                (halfWidth / inSampleSize) >= 512) {
+                inSampleSize *= 2
+            }
+        }
+
+        return inSampleSize
     }
 
 }
