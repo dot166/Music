@@ -26,7 +26,7 @@
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:layout_margin="@dimen/spacing_medium"
-        app:shapeAppearance="@style/ShapeAppearance.Material3.Corner.Large"
+        app:shapeAppearance="@style/ShapeAppearance.Material3.Corner.ExtraLarge"
         app:layout_constraintBottom_toTopOf="@id/layout"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -92,10 +92,9 @@
             tools:text="Info"/>
 
 
-        <LinearLayout
+        <FrameLayout
             android:id="@+id/seekBar_layout"
             android:layout_width="match_parent"
-            android:orientation="vertical"
             app:layout_constraintBottom_toTopOf="@id/playback_controls_container"
             app:layout_constraintTop_toBottomOf="@id/now_playing_artist"
             android:layout_height="wrap_content">
@@ -105,10 +104,33 @@
                 app:labelBehavior="gone"
                 app:tickVisible="false"
                 app:trackStopIndicatorSize="0dp"
+                app:trackHeight="@dimen/slider_track_height"
+                app:thumbHeight="@dimen/slider_thumb_height"
+                android:layout_marginBottom="@dimen/spacing_medium"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content" />
 
-        </LinearLayout>
+            <TextView
+                android:id="@+id/seek_bar_position"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom|start"
+                android:layout_marginStart="@dimen/spacing_medium"
+                android:layout_marginBottom="@dimen/spacing_tiny"
+                android:textAppearance="?attr/textAppearanceBodySmall"
+                tools:text="11:38" />
+
+            <TextView
+                android:id="@+id/seek_bar_duration"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom|end"
+                android:layout_marginEnd="@dimen/spacing_medium"
+                android:layout_marginBottom="@dimen/spacing_tiny"
+                android:textAppearance="?attr/textAppearanceBodySmall"
+                tools:text="16:16" />
+
+        </FrameLayout>
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
@@ -118,64 +140,74 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/button4"
-                style="@style/Widget.Music.Button.Icon.Small"
+                style="@style/Widget.Music.Button.Playback.Toggle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 app:icon="@drawable/media3_icon_repeat_off"
-                app:iconTint="@color/sel_activatable_icon"
-                app:layout_constraintBottom_toBottomOf="@id/button5"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintHorizontal_bias="0.5"
+                app:layout_constraintHorizontal_chainStyle="packed"
                 app:layout_constraintEnd_toStartOf="@id/button5"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="@id/button5"
-                app:tint="@color/sel_activatable_icon" />
+                app:layout_constraintTop_toTopOf="parent"
+                app:materialSizeOverlay="@style/SizeOverlay.Material3Expressive.Button.IconButton.Medium" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/button5"
-                style="@style/Widget.Music.Button.Icon.Small.Secondary"
+                style="@style/Widget.Music.Button.Playback.Skip"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginHorizontal="@dimen/spacing_small"
                 android:contentDescription="@string/skip_previous"
                 app:icon="@drawable/media3_icon_previous"
-                app:layout_constraintBottom_toBottomOf="@id/button6"
-                app:layout_constraintEnd_toStartOf="@id/button6"
-                app:layout_constraintStart_toEndOf="@id/button4"
-                app:layout_constraintTop_toTopOf="@id/button6" />
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toStartOf="@+id/button6"
+                app:layout_constraintHorizontal_bias="0.5"
+                app:layout_constraintStart_toEndOf="@+id/button4"
+                app:layout_constraintTop_toTopOf="parent"
+                app:materialSizeOverlay="@style/SizeOverlay.Material3Expressive.Button.IconButton.Large.Narrow" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/button6"
-                style="@style/Widget.Music.Button.Icon.Small.PlayPause"
+                style="@style/Widget.Music.Button.Playback.PlayPause"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:contentDescription="@string/play_pause"
                 app:icon="@drawable/media3_icon_play"
                 app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
+                app:layout_constraintEnd_toStartOf="@+id/button7"
+                app:layout_constraintHorizontal_bias="0.5"
+                app:layout_constraintStart_toEndOf="@+id/button5"
+                app:layout_constraintTop_toTopOf="parent"
+                app:materialSizeOverlay="@style/SizeOverlay.Material3Expressive.Button.IconButton.Large" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/button7"
-                style="@style/Widget.Music.Button.Icon.Small.Secondary"
+                style="@style/Widget.Music.Button.Playback.Skip"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginHorizontal="@dimen/spacing_small"
                 android:contentDescription="@string/skip_next"
                 app:icon="@drawable/media3_icon_next"
-                app:layout_constraintBottom_toBottomOf="@id/button6"
-                app:layout_constraintEnd_toStartOf="@id/button8"
-                app:layout_constraintStart_toEndOf="@id/button6"
-                app:layout_constraintTop_toTopOf="@id/button6" />
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toStartOf="@+id/button8"
+                app:layout_constraintHorizontal_bias="0.5"
+                app:layout_constraintStart_toEndOf="@+id/button6"
+                app:layout_constraintTop_toTopOf="parent"
+                app:materialSizeOverlay="@style/SizeOverlay.Material3Expressive.Button.IconButton.Large.Narrow" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/button8"
-                style="@style/Widget.Music.Button.Icon.Small"
+                style="@style/Widget.Music.Button.Playback.Toggle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 app:icon="@drawable/media3_icon_shuffle_off"
-                app:iconTint="@color/sel_activatable_icon"
-                app:layout_constraintBottom_toBottomOf="@+id/button7"
-                app:layout_constraintStart_toEndOf="@id/button7"
+                app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="@+id/button7"
+                app:layout_constraintHorizontal_bias="0.5"
+                app:layout_constraintStart_toEndOf="@+id/button7"
+                app:layout_constraintTop_toTopOf="parent"
+                app:materialSizeOverlay="@style/SizeOverlay.Material3Expressive.Button.IconButton.Medium"
                 app:tint="@color/sel_activatable_icon" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>

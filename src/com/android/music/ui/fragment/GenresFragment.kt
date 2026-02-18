@@ -13,12 +13,10 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.media3.common.MediaItem
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
-import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.android.music.R
-import com.android.music.model.saveQueue
 import com.android.music.playback.MusicService
 import com.android.music.ui.MusicActivity
 import com.android.music.ui.view.MediaAdapter

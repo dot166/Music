@@ -36,9 +36,11 @@
             app:labelBehavior="gone"
             app:tickVisible="false"
             app:trackStopIndicatorSize="0dp"
+            app:trackHeight="@dimen/slider_track_height"
+            app:thumbHeight="@dimen/slider_thumb_height"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"/>
+            app:layout_constraintEnd_toEndOf="parent" />
 
         <LinearLayout
             android:id="@+id/titleandbuttons"
@@ -87,11 +89,13 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/playpause"
-                style="@style/Widget.Music.Button.Icon.Small.PlayPause"
+                style="@style/Widget.Music.Button.Playback.PlayPause"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:onClick="playPauseClicked"
-                app:icon="@drawable/media3_icon_play"/>
+                android:contentDescription="@string/play_pause"
+                app:icon="@drawable/media3_icon_play"
+                app:materialSizeOverlay="@style/SizeOverlay.Material3Expressive.Button.IconButton.Large" />
         </LinearLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
