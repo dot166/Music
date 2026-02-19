@@ -13,9 +13,7 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.core.content.edit
 import androidx.fragment.app.Fragment
-import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
 import androidx.media3.common.Player.REPEAT_MODE_ALL
@@ -23,7 +21,6 @@ import androidx.media3.common.Player.REPEAT_MODE_OFF
 import androidx.media3.common.Player.REPEAT_MODE_ONE
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
-import androidx.preference.PreferenceManager
 import com.android.music.R
 import com.android.music.playback.MusicService
 import com.google.android.material.button.MaterialButton
@@ -192,14 +189,6 @@ class NowPlayingFragment: Fragment() {
                             layoutMain.findViewById<TextView>(R.id.now_playing_artist)!!.text = mediaMetadata.artist
                         }
 
-                        override fun onMediaItemTransition(item: MediaItem?, reason: Int) {
-                            if (context != null) {
-                                PreferenceManager.getDefaultSharedPreferences(context!!).edit {
-                                    putInt("queue_index", controller.currentMediaItemIndex)
-                                }
-                            }
-                        }
-
                         override fun onShuffleModeEnabledChanged(shuffleModeEnabled: Boolean) {
                             layoutMain.findViewById<MaterialButton>(R.id.button8).isActivated = shuffleModeEnabled
                             layoutMain.findViewById<MaterialButton>(R.id.button8).setIconResource(
@@ -208,12 +197,6 @@ class NowPlayingFragment: Fragment() {
                                     false -> androidx.media3.session.R.drawable.media3_icon_shuffle_off
                                 }
                             )
-
-                            if (context != null) {
-                                PreferenceManager.getDefaultSharedPreferences(context!!).edit {
-                                    putBoolean("queue_shuffle", shuffleModeEnabled)
-                                }
-                            }
                         }
 
                         override fun onRepeatModeChanged(repeatMode: Int) {
@@ -226,12 +209,6 @@ class NowPlayingFragment: Fragment() {
                                     else -> androidx.media3.session.R.drawable.media3_icon_repeat_off
                                 }
                             )
-
-                            if (context != null) {
-                                PreferenceManager.getDefaultSharedPreferences(context!!).edit {
-                                    putInt("queue_repeat", repeatMode)
-                                }
-                            }
                         }
                     })
                     mHandled.post(updateThread)
