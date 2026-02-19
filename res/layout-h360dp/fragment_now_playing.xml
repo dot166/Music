@@ -26,7 +26,7 @@
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:layout_margin="@dimen/spacing_medium"
-        app:shapeAppearance="@style/ShapeAppearance.Material3.Corner.Large"
+        app:shapeAppearance="@style/ShapeAppearance.Material3.Corner.ExtraLarge"
         app:layout_constraintBottom_toTopOf="@id/layout"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -118,7 +118,7 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/button4"
-                style="@style/Widget.Music.Button.Icon.Small"
+                style="@style/Widget.Music.Button.Icon.Medium"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 app:icon="@drawable/media3_icon_repeat_off"
@@ -131,7 +131,7 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/button5"
-                style="@style/Widget.Music.Button.Icon.Small.Secondary"
+                style="@style/Widget.Music.Button.Icon.Huge"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:contentDescription="@string/skip_previous"
@@ -143,7 +143,7 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/button6"
-                style="@style/Widget.Music.Button.Icon.Small.PlayPause"
+                style="@style/Widget.Music.Button.PlayPause"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:contentDescription="@string/play_pause"
@@ -155,7 +155,7 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/button7"
-                style="@style/Widget.Music.Button.Icon.Small.Secondary"
+                style="@style/Widget.Music.Button.Icon.Huge"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:contentDescription="@string/skip_next"
@@ -167,7 +167,7 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/button8"
-                style="@style/Widget.Music.Button.Icon.Small"
+                style="@style/Widget.Music.Button.Icon.Medium"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 app:icon="@drawable/media3_icon_shuffle_off"
