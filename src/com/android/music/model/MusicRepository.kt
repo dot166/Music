@@ -121,6 +121,63 @@ class MusicRepository private constructor(context: Context) {
         return mediaItems
     }
 
+    fun searchSongs(query: String): MutableList<MediaItem> {
+        Log.d("QUERY_DEBUG", "QUERY = $query")
+        val mediaItems = mutableListOf<MediaItem>()
+
+        val resolver = appContext.contentResolver
+        val baseUri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
+
+        val selectionParts = mutableListOf(
+            "${MediaStore.Audio.Media.RELATIVE_PATH} LIKE ?"
+        )
+        val args = mutableListOf("Music/%")
+
+        selectionParts.add("${MediaStore.Audio.Media.TITLE} = ?")
+        args.add("%$query%")
+
+        val selection = selectionParts.joinToString(" AND ")
+        val cursor = resolver.query(
+            baseUri,
+            arrayOf(
+                MediaStore.Audio.Media._ID,
+                MediaStore.Audio.Media.TITLE
+            ),
+            selection,
+            args.toTypedArray(),
+            MediaStore.Audio.Media.TITLE
+        )
+        cursor?.use {
+            while (it.moveToNext()) {
+                val id = it.getLong(it.getColumnIndexOrThrow(MediaStore.Audio.Media._ID))
+                val uri = ContentUris.withAppendedId(
+                    MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, id
+                )
+                val mmr = MediaMetadataRetriever()
+                mmr.setDataSource(appContext, uri)
+                val title = resolveTitle(appContext, uri, mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE))
+                val albumArt = mmr.embeddedPicture
+                val artist = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST)
+                    ?: appContext.getString(R.string.unknown_artist_name)
+                mediaItems.add(MediaItem.Builder()
+                    .setMediaId(id.toString())
+                    .setUri(uri)
+                    .setMediaMetadata(
+                        MediaMetadata.Builder()
+                            .setTitle(title)
+                            .setArtist(artist)
+                            .setArtworkData(albumArt, null)
+                            .setIsBrowsable(true)
+                            .build()
+                    )
+                    .build()
+                )
+                mmr.release()
+            }
+        }
+        return mediaItems
+    }
+
     @SuppressLint("UseCompatLoadingForDrawables")
     fun loadAlbums(album: String?): MutableList<MediaItem> {
         if (album != null) {
@@ -306,7 +363,7 @@ class MusicRepository private constructor(context: Context) {
 
 }
 
-fun Player.saveQueue(prefs: SharedPreferences, mediaItems: MutableList<MediaItem>, album: String?, artist: String?, genre: String?) {
+fun Player.saveQueue(prefs: SharedPreferences, mediaItems: MutableList<MediaItem>, album: String?, artist: String?, genre: String?, query: String?) {
     val joined = mediaItems
         .mapNotNull { it.localConfiguration?.uri?.toString() }
         .joinToString("|")
@@ -319,6 +376,7 @@ fun Player.saveQueue(prefs: SharedPreferences, mediaItems: MutableList<MediaItem
         putString("queue_filter_album", album)
         putString("queue_filter_artist", artist)
         putString("queue_filter_genre", genre)
+        putString("queue_query", query)
     }
 }
 
@@ -331,6 +389,7 @@ fun Player.restoreQueue(ctx: Context) {
     val album = prefs.getString("queue_filter_album", null)
     val artist = prefs.getString("queue_filter_artist", null)
     val genre = prefs.getString("queue_filter_genre", null)
+    val query = prefs.getString("queue_query", null)
 
     var items = joined.split("|")
         .filter { it.isNotBlank() }
@@ -338,7 +397,11 @@ fun Player.restoreQueue(ctx: Context) {
 
     if (items.isEmpty()) return
 
-    val itemsFromDB = MusicRepository.getInstance(ctx).loadSongs(album, artist, genre)
+    val itemsFromDB = if (query != null) {
+        MusicRepository.getInstance(ctx).searchSongs(query)
+    } else {
+        MusicRepository.getInstance(ctx).loadSongs(album, artist, genre)
+    }
     if (itemsFromDB.isEmpty()) {
         // ok..., what...
         return

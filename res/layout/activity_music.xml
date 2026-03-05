@@ -11,16 +11,17 @@
         android:layout_height="match_parent"
         android:layout_marginBottom="?actionBarSize">
 
-        <com.google.android.material.appbar.MaterialToolbar
-            android:id="@+id/actionbar"
+        <com.google.android.material.search.SearchBar
+            android:id="@+id/search_bar"
             android:layout_width="match_parent"
-            android:layout_height="?actionBarSize"/>
+            android:layout_height="wrap_content"
+            android:hint="@string/searchbar_hint" />
 
         <com.google.android.material.tabs.TabLayout
             android:id="@+id/tabs"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_below="@id/actionbar"/>
+            android:layout_below="@id/search_bar"/>
 
         <androidx.viewpager2.widget.ViewPager2
             android:id="@+id/pager"
@@ -28,6 +29,20 @@
             android:layout_height="match_parent"
             android:layout_below="@id/tabs"/>
     </RelativeLayout>
+
+    <com.google.android.material.search.SearchView
+        android:id="@+id/search"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:hint="@string/searchbar_hint"
+        app:layout_anchor="@id/search_bar">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recycler_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+    </com.google.android.material.search.SearchView>
 
     <FrameLayout
         android:id="@+id/playback_sheet"

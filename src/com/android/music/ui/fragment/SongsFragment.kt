@@ -78,7 +78,7 @@ class SongsFragment: Fragment() {
             controller.play()
             controller.saveQueue(
                 PreferenceManager.getDefaultSharedPreferences(requireContext()),
-                mediaItems, viewModel!!.getAlbumFilter(), viewModel!!.getArtistFilter(), viewModel!!.getGenreFilter(),
+                mediaItems, viewModel!!.getAlbumFilter(), viewModel!!.getArtistFilter(), viewModel!!.getGenreFilter(), null
             )
         }
         val token = SessionToken(requireContext(), ComponentName(requireContext(), MusicService::class.java))
@@ -110,7 +110,7 @@ class SongsFragment: Fragment() {
                                     controller.play()
                                     controller.saveQueue(
                                         PreferenceManager.getDefaultSharedPreferences(context!!),
-                                        mediaItems, viewModel!!.getAlbumFilter(), viewModel!!.getArtistFilter(), viewModel!!.getGenreFilter(),
+                                        mediaItems, viewModel!!.getAlbumFilter(), viewModel!!.getArtistFilter(), viewModel!!.getGenreFilter(), null
                                     )
                                 }
                                 recyclerView.setLayoutManager(LinearLayoutManager(context))
