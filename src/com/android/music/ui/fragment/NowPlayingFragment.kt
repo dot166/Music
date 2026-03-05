@@ -77,7 +77,7 @@ class NowPlayingFragment: Fragment() {
                 layoutMain.findViewById<TextView>(R.id.seek_bar_duration).text =
                     String.format("%02d:%02d:%02d", durHours, durMinutes, durSeconds)
             }
-            mHandled.postDelayed(updateThread, 1000)
+            mHandled.postDelayed(updateThread, 100)
         }
     }
 
