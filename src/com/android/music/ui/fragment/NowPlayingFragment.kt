@@ -44,23 +44,25 @@ class NowPlayingFragment: Fragment() {
 
     private val updateThread: Runnable = object : Runnable {
         override fun run() {
-            if (!controller.isConnected) {
-                // uh oh, service died
-                mHandled.postDelayed({
-                    activity!!.recreate() // quick, rebuild UI to start service again.
-                }, 2000)
-                return  // just in case
-            }
-            updatePlayPause()
-            mDuration = controller.duration.coerceAtLeast(0L)
-            if (mDuration == 0L) {
-                mDuration = 1L
-            }
-            mSeekBar.valueTo = mDuration.toFloat()
-            if (!mSeeking && mDuration > 0) {
-                val pos = controller.currentPosition.toFloat()
-                val clamped = pos.coerceIn(0f, mSeekBar.valueTo)
-                mSeekBar.value = clamped
+            if (::controller.isInitialized) {
+                if (!controller.isConnected) {
+                    // uh oh, service died
+                    mHandled.postDelayed({
+                        activity!!.recreate() // quick, rebuild UI to start service again.
+                    }, 2000)
+                    return  // just in case
+                }
+                updatePlayPause()
+                mDuration = controller.duration.coerceAtLeast(0L)
+                if (mDuration == 0L) {
+                    mDuration = 1L
+                }
+                mSeekBar.valueTo = mDuration.toFloat()
+                if (!mSeeking && mDuration > 0) {
+                    val pos = controller.currentPosition.toFloat()
+                    val clamped = pos.coerceIn(0f, mSeekBar.valueTo)
+                    mSeekBar.value = clamped
+                }
             }
             mHandled.postDelayed(updateThread, 1000)
         }
