@@ -133,7 +133,7 @@ class MusicRepository private constructor(context: Context) {
         )
         val args = mutableListOf("Music/%")
 
-        selectionParts.add("${MediaStore.Audio.Media.TITLE} = ?")
+        selectionParts.add("${MediaStore.Audio.Media.TITLE} LIKE ? COLLATE NOCASE")
         args.add("%$query%")
 
         val selection = selectionParts.joinToString(" AND ")
@@ -397,7 +397,7 @@ fun Player.restoreQueue(ctx: Context) {
 
     if (items.isEmpty()) return
 
-    val itemsFromDB = if (query != null) {
+    val itemsFromDB = if (!query.isNullOrBlank()) {
         MusicRepository.getInstance(ctx).searchSongs(query)
     } else {
         MusicRepository.getInstance(ctx).loadSongs(album, artist, genre)

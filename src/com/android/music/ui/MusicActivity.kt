@@ -7,6 +7,7 @@ import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
 import android.util.Log
+import android.view.View.VISIBLE
 import androidx.fragment.app.Fragment
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
@@ -126,7 +127,7 @@ class MusicActivity : jActivity() {
                 count: Int
             ) {
                 val mediaItems = MusicRepository.getInstance(this@MusicActivity).searchSongs(
-                    s as String
+                    s.toString()
                 )
                 val adapter = MediaAdapter(mediaItems) { item ->
                     val shuffle = controller.shuffleModeEnabled
@@ -140,7 +141,7 @@ class MusicActivity : jActivity() {
                     controller.play()
                     controller.saveQueue(
                         PreferenceManager.getDefaultSharedPreferences(this@MusicActivity),
-                        mediaItems, null, null, null, s
+                        mediaItems, null, null, null, s.toString()
                     )
                 }
                 recyclerView.adapter = adapter

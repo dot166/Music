@@ -24,13 +24,18 @@ import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
 import android.provider.OpenableColumns
+import android.text.Editable
+import android.text.TextWatcher
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
+import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.android.music.model.MusicRepository
+import com.android.music.model.saveQueue
 import com.android.music.ui.view.MediaAdapter
-import com.google.android.material.appbar.MaterialToolbar
+import com.google.android.material.search.SearchView
 import io.github.dot166.jlib.app.jActivity
 
 
@@ -41,11 +46,9 @@ class MusicPicker : jActivity() {
         val baseUri = if (Intent.ACTION_GET_CONTENT == intent.action) {
             MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
         } else {
-            intent.data
+            intent.data ?: MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
         }
         setContentView(R.layout.activity_pick)
-        setSupportActionBar(findViewById<MaterialToolbar>(R.id.toolbar))
-        supportActionBar!!.setDisplayHomeAsUpEnabled(true)
         val mediaItems = mutableListOf<MediaItem>()
         val cursor = contentResolver.query(
             baseUri!!,
@@ -99,6 +102,85 @@ class MusicPicker : jActivity() {
         recyclerView.setLayoutManager(LinearLayoutManager(this))
         recyclerView.setItemAnimator(DefaultItemAnimator())
         recyclerView.adapter = adapter
+
+        val search = findViewById<SearchView>(R.id.search)
+        val recyclerViewSearch: RecyclerView = findViewById(R.id.recycler_view_search)
+        recyclerViewSearch.setLayoutManager(LinearLayoutManager(this))
+        recyclerViewSearch.setItemAnimator(DefaultItemAnimator())
+        search.editText.addTextChangedListener(object : TextWatcher {
+            override fun afterTextChanged(s: Editable?) {
+                // noop
+            }
+
+            override fun beforeTextChanged(
+                s: CharSequence?,
+                start: Int,
+                count: Int,
+                after: Int
+            ) {
+                // noop
+            }
+
+            override fun onTextChanged(
+                s: CharSequence?,
+                start: Int,
+                before: Int,
+                count: Int
+            ) {
+
+                val mediaItems = mutableListOf<MediaItem>()
+                val cursor = contentResolver.query(
+                    baseUri,
+                    arrayOf(
+                        MediaStore.Audio.Media._ID,
+                        MediaStore.Audio.Media.TITLE
+                    ),
+                    "${MediaStore.Audio.Media.TITLE} LIKE ? COLLATE NOCASE",
+                    mutableListOf("%$s%").toTypedArray(),
+                    MediaStore.Audio.Media.TITLE
+                )
+                cursor?.use {
+                    while (it.moveToNext()) {
+                        val id = it.getLong(it.getColumnIndexOrThrow(MediaStore.Audio.Media._ID))
+                        val uri = ContentUris.withAppendedId(
+                            MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, id
+                        )
+                        val mmr = MediaMetadataRetriever()
+                        mmr.setDataSource(this@MusicPicker, uri)
+                        val title = resolveTitle(this@MusicPicker, uri, mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE))
+                        val albumArt = mmr.embeddedPicture
+                        val artist = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST)
+                            ?: getString(R.string.unknown_artist_name)
+                        mediaItems.add(MediaItem.Builder()
+                            .setMediaId(id.toString())
+                            .setUri(uri)
+                            .setMediaMetadata(
+                                MediaMetadata.Builder()
+                                    .setTitle(title)
+                                    .setArtist(artist)
+                                    .setArtworkData(albumArt, null)
+                                    .setIsBrowsable(true)
+                                    .build()
+                            )
+                            .build()
+                        )
+                        mmr.release()
+                    }
+                }
+                val adapter = MediaAdapter(mediaItems) { item ->
+                    val songUri = item.localConfiguration?.uri ?: return@MediaAdapter
+                    val resultIntent = Intent().apply {
+                        data = songUri
+                        clipData = ClipData.newRawUri("Selected Song", songUri)
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    }
+                    setResult(RESULT_OK, resultIntent)
+                    finish()
+                }
+                recyclerViewSearch.adapter = adapter
+            }
+
+        })
     }
 
     fun resolveTitle(context: Context, uri: Uri, metadataTitle: CharSequence?): String {
