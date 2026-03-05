@@ -32,7 +32,8 @@
     <string name="unknown_genre_name">Unknown genre</string>
     <string name="genres_title">Genres</string>
     <string name="shuffle_displayed_songs">Shuffle displayed songs</string>
-    <string name="searchbar_hint">Search All Songs</string>
+    <string name="searchbar_hint">Search all songs</string>
+    <string name="music_picker_title">Choose a song</string>
 
 </resources>
 
