@@ -43,6 +43,7 @@ class NowPlayingFragment: Fragment() {
     private var mDuration = 0L
 
     private val updateThread: Runnable = object : Runnable {
+        @SuppressLint("DefaultLocale")
         override fun run() {
             if (::controller.isInitialized) {
                 if (!controller.isConnected) {
@@ -64,6 +65,16 @@ class NowPlayingFragment: Fragment() {
                     mSeekBar.value = clamped
                 }
             }
+            val posTotalTime = controller.currentPosition
+            val posHours = (posTotalTime / (1000 * 60 * 60)).toInt()
+            val posMinutes = ((posTotalTime % (1000 * 60 * 60)) / (1000 * 60)).toInt()
+            val posSeconds = ((posTotalTime % (1000 * 60)) / 1000).toInt()
+            layoutMain.findViewById<TextView>(R.id.seek_bar_position).text = String.format("%02d:%02d:%02d", posHours, posMinutes, posSeconds)
+            val durTotalTime = controller.currentPosition
+            val durHours = (durTotalTime / (1000 * 60 * 60)).toInt()
+            val durMinutes = ((durTotalTime % (1000 * 60 * 60)) / (1000 * 60)).toInt()
+            val durSeconds = ((durTotalTime % (1000 * 60)) / 1000).toInt()
+            layoutMain.findViewById<TextView>(R.id.seek_bar_duration).text = String.format("%02d:%02d:%02d", durHours, durMinutes, durSeconds)
             mHandled.postDelayed(updateThread, 1000)
         }
     }

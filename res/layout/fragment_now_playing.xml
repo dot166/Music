@@ -92,10 +92,9 @@
             tools:text="Info"/>
 
 
-        <LinearLayout
+        <FrameLayout
             android:id="@+id/seekBar_layout"
             android:layout_width="match_parent"
-            android:orientation="vertical"
             app:layout_constraintBottom_toTopOf="@id/playback_controls_container"
             app:layout_constraintTop_toBottomOf="@id/now_playing_artist"
             android:layout_height="wrap_content">
@@ -105,10 +104,33 @@
                 app:labelBehavior="gone"
                 app:tickVisible="false"
                 app:trackStopIndicatorSize="0dp"
+                app:trackHeight="@dimen/slider_track_height"
+                app:thumbHeight="@dimen/slider_thumb_height"
+                android:layout_marginBottom="@dimen/spacing_medium"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content" />
 
-        </LinearLayout>
+            <TextView
+                android:id="@+id/seek_bar_position"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom|start"
+                android:layout_marginStart="@dimen/spacing_medium"
+                android:layout_marginBottom="@dimen/spacing_tiny"
+                android:textAppearance="?attr/textAppearanceBodySmall"
+                tools:text="11:38" />
+
+            <TextView
+                android:id="@+id/seek_bar_duration"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom|end"
+                android:layout_marginEnd="@dimen/spacing_medium"
+                android:layout_marginBottom="@dimen/spacing_tiny"
+                android:textAppearance="?attr/textAppearanceBodySmall"
+                tools:text="16:16" />
+
+        </FrameLayout>
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"

@@ -26,4 +26,6 @@
     <dimen name="size_icon_medium">32dp</dimen>
     <dimen name="size_icon_large">40dp</dimen>
     <dimen name="size_icon_huge">48dp</dimen>
+    <dimen name="slider_track_height">4dp</dimen>
+    <dimen name="slider_thumb_height">24dp</dimen>
 </resources>
