@@ -54,6 +54,22 @@ class NowPlayingFragment: Fragment() {
                     return  // just in case
                 }
                 updatePlayPause()
+                layoutMain.findViewById<MaterialButton>(R.id.button4).isActivated = controller.repeatMode != REPEAT_MODE_OFF
+                layoutMain.findViewById<MaterialButton>(R.id.button4).setIconResource(
+                    when (controller.repeatMode) {
+                        REPEAT_MODE_OFF -> androidx.media3.session.R.drawable.media3_icon_repeat_off
+                        REPEAT_MODE_ALL -> androidx.media3.session.R.drawable.media3_icon_repeat_all
+                        REPEAT_MODE_ONE -> androidx.media3.session.R.drawable.media3_icon_repeat_one
+                        else -> androidx.media3.session.R.drawable.media3_icon_repeat_off
+                    }
+                )
+                layoutMain.findViewById<MaterialButton>(R.id.button8).isActivated = controller.shuffleModeEnabled
+                layoutMain.findViewById<MaterialButton>(R.id.button8).setIconResource(
+                    when (controller.shuffleModeEnabled) {
+                        true -> androidx.media3.session.R.drawable.media3_icon_shuffle_on
+                        false -> androidx.media3.session.R.drawable.media3_icon_shuffle_off
+                    }
+                )
                 mDuration = controller.duration.coerceAtLeast(0L)
                 if (mDuration == 0L) {
                     mDuration = 1L
@@ -202,28 +218,6 @@ class NowPlayingFragment: Fragment() {
                             }
                             layoutMain.findViewById<TextView>(R.id.now_playing_title)!!.text = mediaMetadata.title
                             layoutMain.findViewById<TextView>(R.id.now_playing_artist)!!.text = mediaMetadata.artist
-                        }
-
-                        override fun onShuffleModeEnabledChanged(shuffleModeEnabled: Boolean) {
-                            layoutMain.findViewById<MaterialButton>(R.id.button8).isActivated = shuffleModeEnabled
-                            layoutMain.findViewById<MaterialButton>(R.id.button8).setIconResource(
-                                when (shuffleModeEnabled) {
-                                    true -> androidx.media3.session.R.drawable.media3_icon_shuffle_on
-                                    false -> androidx.media3.session.R.drawable.media3_icon_shuffle_off
-                                }
-                            )
-                        }
-
-                        override fun onRepeatModeChanged(repeatMode: Int) {
-                            layoutMain.findViewById<MaterialButton>(R.id.button4).isActivated = repeatMode != REPEAT_MODE_OFF
-                            layoutMain.findViewById<MaterialButton>(R.id.button4).setIconResource(
-                                when (repeatMode) {
-                                    REPEAT_MODE_OFF -> androidx.media3.session.R.drawable.media3_icon_repeat_off
-                                    REPEAT_MODE_ALL -> androidx.media3.session.R.drawable.media3_icon_repeat_all
-                                    REPEAT_MODE_ONE -> androidx.media3.session.R.drawable.media3_icon_repeat_one
-                                    else -> androidx.media3.session.R.drawable.media3_icon_repeat_off
-                                }
-                            )
                         }
                     })
                     mHandled.post(updateThread)
