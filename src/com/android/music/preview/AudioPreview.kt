@@ -15,6 +15,7 @@
  */
 package com.android.music.preview
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.media.AudioManager
 import android.net.Uri
@@ -24,6 +25,7 @@ import android.os.Looper
 import android.provider.OpenableColumns
 import android.view.KeyEvent
 import android.view.View
+import android.widget.FrameLayout
 import android.widget.TextView
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
@@ -72,7 +74,7 @@ class AudioPreview : jActivity() {
 
         mTextLine1 = findViewById(R.id.line1)
         mTextLine2 = findViewById(R.id.line2)
-        mSeekBar = findViewById(R.id.progress)
+        mSeekBar = findViewById(R.id.seekBar)
 
         mTextLine1.isSelected = true
         mTextLine2.isSelected = true
@@ -185,12 +187,25 @@ class AudioPreview : jActivity() {
     }
 
     inner class ProgressRefresher : Runnable {
+        @SuppressLint("DefaultLocale")
         override fun run() {
             if (!mSeeking && mDuration > 0) {
                 val pos = player.currentPosition.toFloat()
                 val clamped = pos.coerceIn(0f, mSeekBar.valueTo)
                 mSeekBar.value = clamped
             }
+            val posTotalTime = player.currentPosition
+            val posHours = (posTotalTime / (1000 * 60 * 60)).toInt()
+            val posMinutes = ((posTotalTime % (1000 * 60 * 60)) / (1000 * 60)).toInt()
+            val posSeconds = ((posTotalTime % (1000 * 60)) / 1000).toInt()
+            (mSeekBar.parent as FrameLayout).findViewById<TextView>(R.id.seek_bar_position).text =
+                String.format("%02d:%02d:%02d", posHours, posMinutes, posSeconds)
+            val durTotalTime = player.duration
+            val durHours = (durTotalTime / (1000 * 60 * 60)).toInt()
+            val durMinutes = ((durTotalTime % (1000 * 60 * 60)) / (1000 * 60)).toInt()
+            val durSeconds = ((durTotalTime % (1000 * 60)) / 1000).toInt()
+            (mSeekBar.parent as FrameLayout).findViewById<TextView>(R.id.seek_bar_duration).text =
+                String.format("%02d:%02d:%02d", durHours, durMinutes, durSeconds)
 
             mProgressRefresher.removeCallbacksAndMessages(null)
             if (!mUiPaused) {
