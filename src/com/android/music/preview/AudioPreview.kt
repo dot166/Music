@@ -25,6 +25,8 @@ import android.provider.OpenableColumns
 import android.view.KeyEvent
 import android.view.View
 import android.widget.TextView
+import androidx.media3.common.AudioAttributes
+import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.PlaybackException
@@ -76,7 +78,14 @@ class AudioPreview : jActivity() {
         mTextLine2.isSelected = true
 
         // --- Media3 player ---
-        player = ExoPlayer.Builder(this).build()
+        val audioAttributes = AudioAttributes.Builder()
+            .setUsage(C.USAGE_MEDIA)
+            .setContentType(C.AUDIO_CONTENT_TYPE_MUSIC)
+            .build()
+        player = ExoPlayer.Builder(this)
+            .setAudioAttributes(audioAttributes, true)
+            .setHandleAudioBecomingNoisy(true)
+            .build()
 
         player.addListener(object : Player.Listener {
 
