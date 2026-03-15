@@ -47,6 +47,8 @@ class AudioPreview : jActivity() {
     private lateinit var mTextLine1: TextView
     private lateinit var mTextLine2: TextView
     private lateinit var mSeekBar: Slider
+    private lateinit var mSeekBarPos: TextView
+    private lateinit var mSeekBarDur: TextView
     private lateinit var player: ExoPlayer
 
     private var mSeeking = false
@@ -75,6 +77,8 @@ class AudioPreview : jActivity() {
         mTextLine1 = findViewById(R.id.line1)
         mTextLine2 = findViewById(R.id.line2)
         mSeekBar = findViewById(R.id.seekBar)
+        mSeekBarPos = findViewById(R.id.seek_bar_position)
+        mSeekBarDur = findViewById(R.id.seek_bar_duration)
 
         mTextLine1.isSelected = true
         mTextLine2.isSelected = true
@@ -198,14 +202,12 @@ class AudioPreview : jActivity() {
             val posHours = (posTotalTime / (1000 * 60 * 60)).toInt()
             val posMinutes = ((posTotalTime % (1000 * 60 * 60)) / (1000 * 60)).toInt()
             val posSeconds = ((posTotalTime % (1000 * 60)) / 1000).toInt()
-            (mSeekBar.parent as FrameLayout).findViewById<TextView>(R.id.seek_bar_position).text =
-                String.format("%02d:%02d:%02d", posHours, posMinutes, posSeconds)
+            mSeekBarPos.text = String.format("%02d:%02d:%02d", posHours, posMinutes, posSeconds)
             val durTotalTime = player.duration
             val durHours = (durTotalTime / (1000 * 60 * 60)).toInt()
             val durMinutes = ((durTotalTime % (1000 * 60 * 60)) / (1000 * 60)).toInt()
             val durSeconds = ((durTotalTime % (1000 * 60)) / 1000).toInt()
-            (mSeekBar.parent as FrameLayout).findViewById<TextView>(R.id.seek_bar_duration).text =
-                String.format("%02d:%02d:%02d", durHours, durMinutes, durSeconds)
+            mSeekBarDur.text = String.format("%02d:%02d:%02d", durHours, durMinutes, durSeconds)
 
             mProgressRefresher.removeCallbacksAndMessages(null)
             if (!mUiPaused) {

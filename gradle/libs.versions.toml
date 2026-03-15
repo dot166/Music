@@ -1,8 +1,8 @@
 [versions]
 aconfig = "1.2.1"
-agp = "9.0.1"
-jLib = "104.2.15"
-media3 = "1.9.1"
+agp = "9.1.0"
+jLib = "104.2.22"
+media3 = "1.9.2"
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

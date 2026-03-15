@@ -12,7 +12,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
-import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.fragment.app.Fragment
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
@@ -35,8 +34,12 @@ class NowPlayingFragment: Fragment() {
     private lateinit var controller: MediaController
 
     var mHandled: Handler = Handler(Looper.getMainLooper())
-    lateinit var layoutMain: ConstraintLayout
     private lateinit var mSeekBar: Slider
+    private lateinit var mSeekBarPos: TextView
+    private lateinit var mSeekBarDur: TextView
+    private lateinit var mRepeat: MaterialButton
+    private lateinit var mPlay: MaterialButton
+    private lateinit var mShuffle: MaterialButton
 
     private var mSeeking = false
     private var mUiPaused = true
@@ -54,8 +57,8 @@ class NowPlayingFragment: Fragment() {
                     return  // just in case
                 }
                 updatePlayPause()
-                layoutMain.findViewById<MaterialButton>(R.id.button4).isActivated = controller.repeatMode != REPEAT_MODE_OFF
-                layoutMain.findViewById<MaterialButton>(R.id.button4).setIconResource(
+                mRepeat.isActivated = controller.repeatMode != REPEAT_MODE_OFF
+                mRepeat.setIconResource(
                     when (controller.repeatMode) {
                         REPEAT_MODE_OFF -> androidx.media3.session.R.drawable.media3_icon_repeat_off
                         REPEAT_MODE_ALL -> androidx.media3.session.R.drawable.media3_icon_repeat_all
@@ -63,8 +66,8 @@ class NowPlayingFragment: Fragment() {
                         else -> androidx.media3.session.R.drawable.media3_icon_repeat_off
                     }
                 )
-                layoutMain.findViewById<MaterialButton>(R.id.button8).isActivated = controller.shuffleModeEnabled
-                layoutMain.findViewById<MaterialButton>(R.id.button8).setIconResource(
+                mShuffle.isActivated = controller.shuffleModeEnabled
+                mShuffle.setIconResource(
                     when (controller.shuffleModeEnabled) {
                         true -> androidx.media3.session.R.drawable.media3_icon_shuffle_on
                         false -> androidx.media3.session.R.drawable.media3_icon_shuffle_off
@@ -84,27 +87,25 @@ class NowPlayingFragment: Fragment() {
                 val posHours = (posTotalTime / (1000 * 60 * 60)).toInt()
                 val posMinutes = ((posTotalTime % (1000 * 60 * 60)) / (1000 * 60)).toInt()
                 val posSeconds = ((posTotalTime % (1000 * 60)) / 1000).toInt()
-                layoutMain.findViewById<TextView>(R.id.seek_bar_position).text =
-                    String.format("%02d:%02d:%02d", posHours, posMinutes, posSeconds)
+                mSeekBarPos.text = String.format("%02d:%02d:%02d", posHours, posMinutes, posSeconds)
                 val durTotalTime = controller.duration
                 val durHours = (durTotalTime / (1000 * 60 * 60)).toInt()
                 val durMinutes = ((durTotalTime % (1000 * 60 * 60)) / (1000 * 60)).toInt()
                 val durSeconds = ((durTotalTime % (1000 * 60)) / 1000).toInt()
-                layoutMain.findViewById<TextView>(R.id.seek_bar_duration).text =
-                    String.format("%02d:%02d:%02d", durHours, durMinutes, durSeconds)
+                mSeekBarDur.text = String.format("%02d:%02d:%02d", durHours, durMinutes, durSeconds)
             }
-            mHandled.postDelayed(updateThread, 100)
+            mHandled.removeCallbacksAndMessages(null)
+            if (!mUiPaused) {
+                mHandled.postDelayed(updateThread, 200)
+            }
         }
     }
 
     private fun updatePlayPause() {
-        val b: MaterialButton? = layoutMain.findViewById(R.id.button6)
-        if (b != null) {
-            if (controller.isPlaying) {
-                b.setIconResource(androidx.media3.session.R.drawable.media3_icon_pause)
-            } else {
-                b.setIconResource(androidx.media3.session.R.drawable.media3_icon_play)
-            }
+        if (controller.isPlaying) {
+            mPlay.setIconResource(androidx.media3.session.R.drawable.media3_icon_pause)
+        } else {
+            mPlay.setIconResource(androidx.media3.session.R.drawable.media3_icon_play)
         }
     }
 
@@ -120,10 +121,14 @@ class NowPlayingFragment: Fragment() {
 
         val future = MediaController.Builder(requireContext(), token)
             .buildAsync()
-        layoutMain = view.findViewById(R.id.layoutMain)
-        layoutMain.findViewById<TextView>(R.id.now_playing_title)!!.isSelected = true
-        layoutMain.findViewById<TextView>(R.id.now_playing_artist)!!.isSelected = true
-        mSeekBar = layoutMain.findViewById(R.id.seekBar)
+        view.findViewById<TextView>(R.id.now_playing_title)!!.isSelected = true
+        view.findViewById<TextView>(R.id.now_playing_artist)!!.isSelected = true
+        mSeekBar = view.findViewById(R.id.seekBar)
+        mSeekBarPos = view.findViewById(R.id.seek_bar_position)
+        mSeekBarDur = view.findViewById(R.id.seek_bar_duration)
+        mRepeat = view.findViewById(R.id.button4)
+        mPlay = view.findViewById(R.id.button6)
+        mShuffle = view.findViewById(R.id.button8)
         if (mDuration == 0L) {
             mDuration = 1L
         }
@@ -147,7 +152,7 @@ class NowPlayingFragment: Fragment() {
 
                     mSeekBar.addOnChangeListener(mSeekListener)
                     mSeekBar.addOnSliderTouchListener(mTouchListener)
-                    layoutMain.findViewById<MaterialButton>(R.id.button4).setOnClickListener { v ->
+                    mRepeat.setOnClickListener { v ->
                         controller.repeatMode = when (controller.repeatMode) {
                             REPEAT_MODE_OFF -> REPEAT_MODE_ALL
                             REPEAT_MODE_ALL -> REPEAT_MODE_ONE
@@ -164,10 +169,10 @@ class NowPlayingFragment: Fragment() {
                             }
                         )
                     }
-                    layoutMain.findViewById<MaterialButton>(R.id.button5).setOnClickListener { _ ->
+                    view.findViewById<MaterialButton>(R.id.button5).setOnClickListener { _ ->
                         controller.seekToPreviousMediaItem()
                     }
-                    layoutMain.findViewById<MaterialButton>(R.id.button6).setOnClickListener { _ ->
+                    mPlay.setOnClickListener { _ ->
                         when {
                             controller.playbackState == Player.STATE_ENDED -> {
                                 controller.seekTo(0)
@@ -182,10 +187,10 @@ class NowPlayingFragment: Fragment() {
                         }
                         updatePlayPause()
                     }
-                    layoutMain.findViewById<MaterialButton>(R.id.button7).setOnClickListener { _ ->
+                    view.findViewById<MaterialButton>(R.id.button7).setOnClickListener { _ ->
                         controller.seekToNextMediaItem()
                     }
-                    layoutMain.findViewById<MaterialButton>(R.id.button8).setOnClickListener { v ->
+                    mShuffle.setOnClickListener { v ->
                         if (controller.shuffleModeEnabled) {
                             controller.shuffleModeEnabled = false
                         } else {
@@ -199,6 +204,23 @@ class NowPlayingFragment: Fragment() {
                             }
                         )
                     }
+                    val artBytes = controller.mediaMetadata.artworkData
+                    if (artBytes != null) {
+                        val options = BitmapFactory.Options().apply {
+                            inJustDecodeBounds = true
+                        }
+                        BitmapFactory.decodeByteArray(artBytes, 0, artBytes.size, options)
+
+                        options.inSampleSize = calculateSampleSize(options)
+                        options.inJustDecodeBounds = false
+
+                        val bitmap = BitmapFactory.decodeByteArray(artBytes, 0, artBytes.size, options)
+                        view.findViewById<ImageView>(R.id.imageView)!!.setImageBitmap(bitmap)
+                    } else {
+                        view.findViewById<ImageView>(R.id.imageView)!!.setImageResource(R.drawable.def_art)
+                    }
+                    view.findViewById<TextView>(R.id.now_playing_title)!!.text = controller.mediaMetadata.title
+                    view.findViewById<TextView>(R.id.now_playing_artist)!!.text = controller.mediaMetadata.artist
                     controller.addListener(object : Player.Listener {
                         override fun onMediaMetadataChanged(mediaMetadata: MediaMetadata) {
                             val artBytes = mediaMetadata.artworkData
@@ -212,15 +234,14 @@ class NowPlayingFragment: Fragment() {
                                 options.inJustDecodeBounds = false
 
                                 val bitmap = BitmapFactory.decodeByteArray(artBytes, 0, artBytes.size, options)
-                                layoutMain.findViewById<ImageView>(R.id.imageView)!!.setImageBitmap(bitmap)
+                                view.findViewById<ImageView>(R.id.imageView)!!.setImageBitmap(bitmap)
                             } else {
-                                layoutMain.findViewById<ImageView>(R.id.imageView)!!.setImageResource(R.drawable.def_art)
+                                view.findViewById<ImageView>(R.id.imageView)!!.setImageResource(R.drawable.def_art)
                             }
-                            layoutMain.findViewById<TextView>(R.id.now_playing_title)!!.text = mediaMetadata.title
-                            layoutMain.findViewById<TextView>(R.id.now_playing_artist)!!.text = mediaMetadata.artist
+                            view.findViewById<TextView>(R.id.now_playing_title)!!.text = mediaMetadata.title
+                            view.findViewById<TextView>(R.id.now_playing_artist)!!.text = mediaMetadata.artist
                         }
                     })
-                    mHandled.post(updateThread)
                 }
 
                 override fun onFailure(t: Throwable) {
@@ -234,14 +255,15 @@ class NowPlayingFragment: Fragment() {
 
     override fun onPause() {
         super.onPause()
-        mHandled.removeCallbacks(updateThread)
         mUiPaused = true
+        mHandled.removeCallbacksAndMessages(null)
     }
 
     override fun onResume() {
         super.onResume()
-        mHandled.post(updateThread)
         mUiPaused = false
+        mHandled.removeCallbacksAndMessages(null)
+        mHandled.post(updateThread)
     }
 
     private val mTouchListener: Slider.OnSliderTouchListener = object : Slider.OnSliderTouchListener {

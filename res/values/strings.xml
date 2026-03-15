@@ -34,6 +34,7 @@
     <string name="shuffle_displayed_songs">Shuffle displayed songs</string>
     <string name="searchbar_hint">Search all songs</string>
     <string name="music_picker_title">Choose a song</string>
+    <string name="app_widget_description">Playback controls</string>
 
 </resources>
 
