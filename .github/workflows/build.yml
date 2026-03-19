@@ -1,6 +1,6 @@
 name: Build application
 
-on: [pull_request, push, workflow_dispatch]
+on: [pull_request, push]
 
 jobs:
   build:
@@ -20,25 +20,31 @@ jobs:
           git config --global user.name "github-actions[bot]"
       - name: Build with Gradle
         run: ./gradlew assembleRelease
+      - name: Check if Release build
+        shell: sh
+        run: |
+          VERSION=$(jq '.elements[0].versionCode' app/build/outputs/apk/release/output-metadata.json)
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          RELEASE=0 && git show-ref --tags --verify --quiet "refs/tags/$VERSION" || RELEASE=1
+          echo "RELEASE=$RELEASE" >> $GITHUB_ENV
       - name: send to repo and prebuilt
-        if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && github.repository == 'dot166/Music' }}
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'dot166/Music' && env.RELEASE == '1' }}
         run: |
           echo "${{ secrets.KEYSTORE }}" > a.txt
           base64 -d a.txt > key.jks
           echo "${{ secrets.KEYSTORE_PROPS }}" > b.txt
           base64 -d b.txt > keystore.properties
           ./gradlew assembleRelease # rebuild so it is actually signed
-          export VER=$(jq '.elements[0].versionCode' app/build/outputs/apk/release/output-metadata.json)
-          echo $VER
-          mkdir -p artifacts/apps/packages/com.android.music/$VER
-          echo "channel = \"stable"\" > artifacts/apps/packages/com.android.music/$VER/channel.toml
-          cp app/build/outputs/apk/release/app-release.apk artifacts/apps/packages/com.android.music/$VER/base.apk
-          cp app/build/outputs/apk/release/app-release.apk.idsig artifacts/apps/packages/com.android.music/$VER/base.apk.idsig
+          echo ${{ env.VERSION }}
+          mkdir -p artifacts/apps/packages/com.android.music/${{ env.VERSION }}
+          echo "channel = \"stable"\" > artifacts/apps/packages/com.android.music/${{ env.VERSION }}/channel.toml
+          cp app/build/outputs/apk/release/app-release.apk artifacts/apps/packages/com.android.music/${{ env.VERSION }}/base.apk
+          cp app/build/outputs/apk/release/app-release.apk.idsig artifacts/apps/packages/com.android.music/${{ env.VERSION }}/base.apk.idsig
           git clone https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/dot166/apks.git apks
           cp -r artifacts/* apks/
           cd apks
           git add .
-          git commit -m "Music $VER"
+          git commit -m "Music ${{ env.VERSION }}"
           git push origin
           cd ..
           rm -rf artifacts
@@ -48,9 +54,14 @@ jobs:
           cp app/build/outputs/apk/release/app-release.apk.idsig prebuilt/prebuilt/
           cd prebuilt
           git add .
-          git commit -m "Music $VER"
+          git commit -m "Music ${{ env.VERSION }}"
           git push origin
           cd ..
           rm -rf prebuilt
-          git tag -s $VER -m $VER
-          git push origin $VER
+      - name: Upload to new Release
+        uses: softprops/action-gh-release@v2
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'dot166/Music' && env.RELEASE == '1' }}
+        with:
+          tag_name: ${{ env.VERSION }}
+          make_latest: true
+          generate_release_notes: true
