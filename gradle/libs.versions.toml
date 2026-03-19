@@ -2,7 +2,7 @@
 aconfig = "1.2.1"
 agp = "9.1.0"
 jLib = "104.2.22"
-media3 = "1.9.2"
+media3 = "1.9.3"
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
