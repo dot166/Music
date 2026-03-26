@@ -1,5 +1,5 @@
 [versions]
-aconfig = "1.2.1"
+aconfig = "1.3.0"
 agp = "9.1.0"
 jLib = "104.2.22"
 media3 = "1.10.0"
