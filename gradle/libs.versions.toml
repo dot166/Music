@@ -1,7 +1,7 @@
 [versions]
 aconfig = "1.2.1"
 agp = "9.1.0"
-jLib = "104.2.22"
+jLib = "104.2.24"
 media3 = "1.9.3"
 
 [plugins]
