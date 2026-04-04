@@ -57,35 +57,46 @@ class MusicRepository private constructor(context: Context) {
         val resolver = appContext.contentResolver
         var baseUri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
 
-        if (genre != null) {
-            val genreId = getGenreId(genre) ?: return mutableListOf()
-            baseUri = MediaStore.Audio.Genres.Members.getContentUri(
-                "external",
-                genreId
-            )
-        }
-
-        val selectionParts = mutableListOf(
-            "${MediaStore.Audio.Media.RELATIVE_PATH} LIKE ?"
-        )
+        val selectionParts = mutableListOf("${MediaStore.Audio.Media.RELATIVE_PATH} LIKE ?")
         val args = mutableListOf("Music/%")
 
+        // Handle album filter
         if (album != null) {
-            selectionParts.add("${MediaStore.Audio.Media.ALBUM} = ?")
-            args.add(album)
-        } else if (artist != null) {
-            selectionParts.add("${MediaStore.Audio.Media.ARTIST} = ?")
-            args.add(artist)
+            if (album == appContext.getString(R.string.unknown_album_name)) {
+                selectionParts.add("(${MediaStore.Audio.Media.ALBUM} IS NULL OR ${MediaStore.Audio.Media.ALBUM} = '')")
+            } else {
+                selectionParts.add("${MediaStore.Audio.Media.ALBUM} = ?")
+                args.add(album)
+            }
+        }
+
+        // Handle artist filter
+        if (artist != null) {
+            if (artist == appContext.getString(R.string.unknown_artist_name)) {
+                selectionParts.add("(${MediaStore.Audio.Media.ARTIST} IS NULL OR ${MediaStore.Audio.Media.ARTIST} = '')")
+            } else {
+                selectionParts.add("${MediaStore.Audio.Media.ARTIST} = ?")
+                args.add(artist)
+            }
+        }
+
+        // Handle genre filter
+        if (genre != null) {
+            if (genre == appContext.getString(R.string.unknown_genre_name)) {
+                // No genre in MediaStore for unknown, query all tracks without genre
+                baseUri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
+                selectionParts.add("(${MediaStore.Audio.Media.GENRE} IS NULL OR ${MediaStore.Audio.Media.GENRE} = '')")
+            } else {
+                val genreId = getGenreId(genre) ?: return mutableListOf()
+                baseUri = MediaStore.Audio.Genres.Members.getContentUri("external", genreId)
+            }
         }
 
         val selection = selectionParts.joinToString(" AND ")
         Log.d("GENRE_DEBUG", "Members URI = $baseUri")
         val cursor = resolver.query(
             baseUri,
-            arrayOf(
-                MediaStore.Audio.Media._ID,
-                MediaStore.Audio.Media.TITLE
-            ),
+            arrayOf(MediaStore.Audio.Media._ID, MediaStore.Audio.Media.TITLE),
             selection,
             args.toTypedArray(),
             MediaStore.Audio.Media.TITLE
@@ -93,24 +104,25 @@ class MusicRepository private constructor(context: Context) {
         cursor?.use {
             while (it.moveToNext()) {
                 val id = it.getLong(it.getColumnIndexOrThrow(MediaStore.Audio.Media._ID))
-                val uri = ContentUris.withAppendedId(
-                    MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, id
-                )
+                val uri = ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, id)
                 val mmr = MediaMetadataRetriever()
                 mmr.setDataSource(appContext, uri)
                 val title = resolveTitle(appContext, uri, mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE))
                 val albumArt = mmr.embeddedPicture
                 val artist = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST)
                     ?: appContext.getString(R.string.unknown_artist_name)
+                Log.i("loadSongs", "idFromDB:$id title:$title artist:$artist genreFilter:$genre args:$args")
                 mediaItems.add(MediaItem.Builder()
-                    .setMediaId(id.toString())
+                    .setMediaId("song:$id")
                     .setUri(uri)
                     .setMediaMetadata(
                         MediaMetadata.Builder()
                             .setTitle(title)
                             .setArtist(artist)
                             .setArtworkData(albumArt, null)
-                            .setIsBrowsable(true)
+                            .setIsBrowsable(false)
+                            .setIsPlayable(true)
+                            .setMediaType(MediaMetadata.MEDIA_TYPE_MUSIC)
                             .build()
                     )
                     .build()
@@ -121,7 +133,7 @@ class MusicRepository private constructor(context: Context) {
         return mediaItems
     }
 
-    fun searchSongs(query: String): MutableList<MediaItem> {
+    fun searchSongs(query: String): MutableList<MediaItem>? {
         Log.d("QUERY_DEBUG", "QUERY = $query")
         val mediaItems = mutableListOf<MediaItem>()
 
@@ -133,8 +145,15 @@ class MusicRepository private constructor(context: Context) {
         )
         val args = mutableListOf("Music/%")
 
-        selectionParts.add("${MediaStore.Audio.Media.TITLE} LIKE ? COLLATE NOCASE")
+        val selectionParts2 = mutableListOf("${MediaStore.Audio.Media.TITLE} LIKE ? COLLATE NOCASE")
         args.add("%$query%")
+        selectionParts2.add("${MediaStore.Audio.Media.ALBUM} LIKE ? COLLATE NOCASE")
+        args.add("%$query%")
+        selectionParts2.add("${MediaStore.Audio.Media.ARTIST} LIKE ? COLLATE NOCASE")
+        args.add("%$query%")
+        selectionParts2.add("${MediaStore.Audio.Media._ID} LIKE ? COLLATE NOCASE")
+        args.add("%$query%")
+        selectionParts.add(selectionParts2.joinToString(" OR "))
 
         val selection = selectionParts.joinToString(" AND ")
         val cursor = resolver.query(
@@ -160,7 +179,7 @@ class MusicRepository private constructor(context: Context) {
                 val artist = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST)
                     ?: appContext.getString(R.string.unknown_artist_name)
                 mediaItems.add(MediaItem.Builder()
-                    .setMediaId(id.toString())
+                    .setMediaId("song:$id")
                     .setUri(uri)
                     .setMediaMetadata(
                         MediaMetadata.Builder()
@@ -168,6 +187,8 @@ class MusicRepository private constructor(context: Context) {
                             .setArtist(artist)
                             .setArtworkData(albumArt, null)
                             .setIsBrowsable(true)
+                            .setIsPlayable(true)
+                            .setMediaType(MediaMetadata.MEDIA_TYPE_MUSIC)
                             .build()
                     )
                     .build()
@@ -175,7 +196,9 @@ class MusicRepository private constructor(context: Context) {
                 mmr.release()
             }
         }
-        return mediaItems
+        return mediaItems.ifEmpty {
+            null
+        }
     }
 
     @SuppressLint("UseCompatLoadingForDrawables")
@@ -184,22 +207,15 @@ class MusicRepository private constructor(context: Context) {
             return loadSongs(album, null, null)
         }
         val albums = mutableMapOf<String, MediaItem>()
-        val selectionParts = mutableListOf(
-            "${MediaStore.Audio.Media.RELATIVE_PATH} LIKE ?"
-        )
-        val args = mutableListOf("Music/%")
+        val resolver = appContext.contentResolver
+        val selection = "${MediaStore.Audio.Media.RELATIVE_PATH} LIKE ?"
+        val args = arrayOf("Music/%")
 
-        val selection = selectionParts.joinToString(" AND ")
-        val cursor = appContext.contentResolver.query(
+        val cursor = resolver.query(
             MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
-            arrayOf(
-                MediaStore.Audio.Media._ID,
-                MediaStore.Audio.Media.ALBUM,
-                MediaStore.Audio.Media.ARTIST,
-                MediaStore.Audio.Media.RELATIVE_PATH
-            ),
+            arrayOf(MediaStore.Audio.Media._ID, MediaStore.Audio.Media.ALBUM, MediaStore.Audio.Media.ARTIST),
             selection,
-            args.toTypedArray(),
+            args,
             MediaStore.Audio.Media.ALBUM
         )
 
@@ -214,10 +230,7 @@ class MusicRepository private constructor(context: Context) {
                 // Already emitted this album? Skip — we only need one representative
                 if (albums.containsKey(album)) continue
 
-                val uri = ContentUris.withAppendedId(
-                    MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, id
-                )
-
+                val uri = ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, id)
                 val mmr = MediaMetadataRetriever()
                 mmr.setDataSource(appContext, uri)
 
@@ -249,18 +262,17 @@ class MusicRepository private constructor(context: Context) {
         if (artist != null) {
             return loadSongs(null, artist, null)
         }
-        val artists = mutableMapOf<String, MediaItem>()
-        val selection = "${MediaStore.Audio.Media.RELATIVE_PATH} LIKE ?"
-        val selectionArgs = arrayOf("Music/%")
 
-        val cursor = appContext.contentResolver.query(
+        val artists = mutableMapOf<String, MediaItem>()
+        val resolver = appContext.contentResolver
+        val selection = "${MediaStore.Audio.Media.RELATIVE_PATH} LIKE ?"
+        val args = arrayOf("Music/%")
+
+        val cursor = resolver.query(
             MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
-            arrayOf(
-                MediaStore.Audio.Media.ARTIST,
-                MediaStore.Audio.Media.RELATIVE_PATH
-            ),
+            arrayOf(MediaStore.Audio.Media.ARTIST),
             selection,
-            selectionArgs,
+            args,
             MediaStore.Audio.Media.ARTIST
         )
 
@@ -295,18 +307,17 @@ class MusicRepository private constructor(context: Context) {
         if (genre != null) {
             return loadSongs(null, null, genre)
         }
-        val genres = mutableMapOf<String, MediaItem>()
-        val selection = "${MediaStore.Audio.Media.RELATIVE_PATH} LIKE ?"
-        val selectionArgs = arrayOf("Music/%")
 
-        val cursor = appContext.contentResolver.query(
+        val genres = mutableMapOf<String, MediaItem>()
+        val resolver = appContext.contentResolver
+        val selection = "${MediaStore.Audio.Media.RELATIVE_PATH} LIKE ?"
+        val args = arrayOf("Music/%")
+
+        val cursor = resolver.query(
             MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
-            arrayOf(
-                MediaStore.Audio.Media.GENRE,
-                MediaStore.Audio.Media.RELATIVE_PATH
-            ),
+            arrayOf(MediaStore.Audio.Media.GENRE),
             selection,
-            selectionArgs,
+            args,
             MediaStore.Audio.Media.GENRE
         )
 
@@ -398,7 +409,7 @@ fun Player.restoreQueue(ctx: Context) {
     if (items.isEmpty()) return
 
     val itemsFromDB = if (!query.isNullOrBlank()) {
-        MusicRepository.getInstance(ctx).searchSongs(query)
+        MusicRepository.getInstance(ctx).searchSongs(query) ?: mutableListOf()
     } else {
         MusicRepository.getInstance(ctx).loadSongs(album, artist, genre)
     }

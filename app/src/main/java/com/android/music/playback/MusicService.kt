@@ -14,18 +14,23 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.session.LibraryResult
+import androidx.media3.session.MediaLibraryService
 import androidx.media3.session.MediaSession
-import androidx.media3.session.MediaSessionService
 import androidx.preference.PreferenceManager
 import com.android.music.MediaControlsWidget
 import com.android.music.R
+import com.android.music.model.MusicRepository
 import com.android.music.model.restoreQueue
 import com.android.music.ui.MusicActivity
+import com.google.common.collect.ImmutableList
+import com.google.common.util.concurrent.Futures
+import com.google.common.util.concurrent.ListenableFuture
 
-class MusicService : MediaSessionService() {
+class MusicService : MediaLibraryService() {
 
     private lateinit var player: ExoPlayer
-    private lateinit var session: MediaSession
+    private lateinit var session: MediaLibrarySession
 
     override fun onCreate() {
         super.onCreate()
@@ -68,13 +73,105 @@ class MusicService : MediaSessionService() {
         })
         updateWidget()
 
-        session = MediaSession.Builder(this, player)
+        // Root for Auto
+        val rootItem = MediaItem.Builder()
+            .setMediaId("root")
+            .setMediaMetadata(
+                MediaMetadata.Builder()
+                    .setTitle("Music")
+                    .setIsBrowsable(true)
+                    .setIsPlayable(false)
+                    .build()
+            )
+            .build()
+
+        // First-level tabs under root
+        val rootChildren = listOf(
+            MediaItem.Builder().setMediaId("tracks").setMediaMetadata(MediaMetadata.Builder().setTitle(getString(R.string.tracks_title)).setIsBrowsable(true).setIsPlayable(false).build()).build(),
+            MediaItem.Builder().setMediaId("albums").setMediaMetadata(MediaMetadata.Builder().setTitle(getString(R.string.albums_title)).setIsBrowsable(true).setIsPlayable(false).build()).build(),
+            MediaItem.Builder().setMediaId("artists").setMediaMetadata(MediaMetadata.Builder().setTitle(getString(R.string.artists_title)).setIsBrowsable(true).setIsPlayable(false).build()).build(),
+            MediaItem.Builder().setMediaId("genres").setMediaMetadata(MediaMetadata.Builder().setTitle(getString(R.string.genres_title)).setIsBrowsable(true).setIsPlayable(false).build()).build()
+        )
+
+        val musicRepository = MusicRepository.getInstance(this)
+
+        val callback = object : MediaLibrarySession.Callback {
+
+            override fun onGetLibraryRoot(
+                session: MediaLibrarySession,
+                browser: MediaSession.ControllerInfo,
+                params: LibraryParams?
+            ): ListenableFuture<LibraryResult<MediaItem>> {
+                Log.i("AUTO - dbg", "onGetLibraryRoot()")
+                Log.i("AUTO - dbg", "noID, this is root")
+                return Futures.immediateFuture(LibraryResult.ofItem(rootItem, params))
+            }
+
+            override fun onGetChildren(
+                session: MediaLibrarySession,
+                browser: MediaSession.ControllerInfo,
+                parentId: String,
+                page: Int,
+                pageSize: Int,
+                params: LibraryParams?
+            ): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> {
+                Log.i("AUTO - dbg", "onGetChildren()")
+                Log.i("AUTO - dbg", "parentId:$parentId")
+
+                val items: List<MediaItem> = when(parentId) {
+                    "root" -> rootChildren
+                    "albums" -> musicRepository.loadAlbums(null) // top-level albums
+                    "artists" -> musicRepository.loadArtists(null) // top-level artists
+                    "genres" -> musicRepository.loadGenres(null) // top-level genres
+                    "tracks" -> musicRepository.loadSongs(null, null, null) // everything
+                    else -> {
+                        // handle drill-down for album/artist/genre
+                        when {
+                            parentId.startsWith("album:") -> {
+                                val album = parentId.removePrefix("album:")
+                                musicRepository.loadAlbums(album) // tracks in album
+                            }
+                            parentId.startsWith("artist:") -> {
+                                val artist = parentId.removePrefix("artist:")
+                                musicRepository.loadArtists(artist) // tracks by artist
+                            }
+                            parentId.startsWith("genre:") -> {
+                                val genre = parentId.removePrefix("genre:")
+                                musicRepository.loadGenres(genre) // tracks by genre
+                            }
+                            else -> emptyList()
+                        }
+                    }
+                }
+
+                return Futures.immediateFuture(LibraryResult.ofItemList(items, params))
+            }
+
+            override fun onAddMediaItems(
+                mediaSession: MediaSession,
+                controller: MediaSession.ControllerInfo,
+                mediaItems: MutableList<MediaItem>
+            ): ListenableFuture<MutableList<MediaItem>> {
+                val resolvedItems = mediaItems.map { item ->
+                    if (item.localConfiguration != null) return@map item
+
+                    // Use your repository to find the full MediaItem by ID
+                    // Note: You might need a more robust lookup than searchSongs().first()
+                    val id = item.mediaId.removePrefix("song:")
+                    musicRepository.searchSongs(id)?.firstOrNull() ?: item
+                }.toMutableList()
+
+                return Futures.immediateFuture(resolvedItems)
+            }
+        }
+
+        session = MediaLibrarySession.Builder(this, player, callback)
             .setSessionActivity(PendingIntent.getActivity(this, 0, Intent(this, MusicActivity::class.java),
                 PendingIntent.FLAG_IMMUTABLE))
             .build()
     }
 
-    override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession {
+    override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaLibrarySession {
         return session
     }
 

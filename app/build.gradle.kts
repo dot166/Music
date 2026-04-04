@@ -32,7 +32,7 @@ android {
         applicationId = "com.android.music"
         minSdk = 31
         targetSdk = 36
-        versionCode = 1
+        versionCode = 2
         versionName = versionCode.toString()
     }
     buildTypes {
@@ -68,6 +68,6 @@ dependencies {
 }
 
 //aconfig {
-//    textProtoRepo = "https://github.com/GrapheneOS/platform_build_release"
 //    aconfigFiles = mutableListOf("")
+//    isAOSP = false
 //}

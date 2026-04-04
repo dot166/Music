@@ -3,12 +3,14 @@ package com.android.music.ui
 import android.annotation.SuppressLint
 import android.content.ComponentName
 import android.content.Intent
+import android.media.browse.MediaBrowser
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
 import android.util.Log
 import android.view.View.VISIBLE
 import androidx.fragment.app.Fragment
+import androidx.media3.common.MediaItem
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
 import androidx.preference.PreferenceManager
@@ -128,7 +130,7 @@ class MusicActivity : jActivity() {
             ) {
                 val mediaItems = MusicRepository.getInstance(this@MusicActivity).searchSongs(
                     s.toString()
-                )
+                ) ?: mutableListOf<MediaItem>()
                 val adapter = MediaAdapter(mediaItems) { item ->
                     val shuffle = controller.shuffleModeEnabled
                     val repeat = controller.repeatMode
