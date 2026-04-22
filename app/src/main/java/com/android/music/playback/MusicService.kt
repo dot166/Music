@@ -7,12 +7,14 @@ import android.content.Intent
 import android.graphics.BitmapFactory
 import android.util.Log
 import android.widget.RemoteViews
+import androidx.annotation.OptIn
 import androidx.core.content.edit
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.session.LibraryResult
 import androidx.media3.session.MediaLibraryService
@@ -123,21 +125,29 @@ class MusicService : MediaLibraryService() {
                     "albums" -> musicRepository.loadAlbums(null) // top-level albums
                     "artists" -> musicRepository.loadArtists(null) // top-level artists
                     "genres" -> musicRepository.loadGenres(null) // top-level genres
-                    "tracks" -> musicRepository.loadSongs(null, null, null) // everything
+                    "tracks" -> musicRepository.loadSongs(null, null, null).map { item ->
+                        item.buildUpon().setMediaId("songs|${item.mediaId}").build()
+                    } // everything
                     else -> {
                         // handle drill-down for album/artist/genre
                         when {
                             parentId.startsWith("album:") -> {
                                 val album = parentId.removePrefix("album:")
-                                musicRepository.loadAlbums(album) // tracks in album
+                                musicRepository.loadAlbums(album).map { item ->
+                                    item.buildUpon().setMediaId("album:$album|${item.mediaId}").build()
+                                } // tracks in album
                             }
                             parentId.startsWith("artist:") -> {
                                 val artist = parentId.removePrefix("artist:")
-                                musicRepository.loadArtists(artist) // tracks by artist
+                                musicRepository.loadArtists(artist).map { item ->
+                                    item.buildUpon().setMediaId("artist:$artist|${item.mediaId}").build()
+                                } // tracks by artist
                             }
                             parentId.startsWith("genre:") -> {
                                 val genre = parentId.removePrefix("genre:")
-                                musicRepository.loadGenres(genre) // tracks by genre
+                                musicRepository.loadGenres(genre).map { item ->
+                                    item.buildUpon().setMediaId("genre:$genre|${item.mediaId}").build()
+                                } // tracks by genre
                             }
                             else -> emptyList()
                         }
@@ -145,6 +155,38 @@ class MusicService : MediaLibraryService() {
                 }
 
                 return Futures.immediateFuture(LibraryResult.ofItemList(items, params))
+            }
+
+            @OptIn(UnstableApi::class)
+            override fun onSetMediaItems(
+                mediaSession: MediaSession,
+                controller: MediaSession.ControllerInfo,
+                mediaItems: MutableList<MediaItem>,
+                startIndex: Int,
+                startPositionMs: Long
+            ): ListenableFuture<MediaSession.MediaItemsWithStartPosition> {
+
+                val firstItem = mediaItems.firstOrNull() ?: return super.onSetMediaItems(mediaSession, controller, mediaItems, startIndex, startPositionMs)
+
+                if (firstItem.mediaId.contains("|")) {
+                    val parts = firstItem.mediaId.split("|")
+                    val parentId = parts[0]
+                    val realId = parts[1]
+
+                    val fullQueue = when {
+                        parentId == "songs" -> musicRepository.loadSongs(null, null, null)
+                        parentId.startsWith("album:") -> musicRepository.loadAlbums(parentId.removePrefix("album:"))
+                        parentId.startsWith("artist:") -> musicRepository.loadArtists(parentId.removePrefix("artist:"))
+                        parentId.startsWith("genre:") -> musicRepository.loadGenres(parentId.removePrefix("genre:"))
+                        else -> listOf(firstItem)
+                    }
+                    val index = fullQueue.indexOfFirst { it.mediaId == realId }.coerceAtLeast(0)
+                    return Futures.immediateFuture(
+                        MediaSession.MediaItemsWithStartPosition(fullQueue, index, startPositionMs)
+                    )
+                }
+
+                return super.onSetMediaItems(mediaSession, controller, mediaItems, startIndex, startPositionMs)
             }
 
             override fun onAddMediaItems(
