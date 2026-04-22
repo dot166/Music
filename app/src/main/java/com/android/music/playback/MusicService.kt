@@ -78,7 +78,7 @@ class MusicService : MediaLibraryService() {
             .setMediaId("root")
             .setMediaMetadata(
                 MediaMetadata.Builder()
-                    .setTitle("Music")
+                    .setTitle(getString(R.string.app_name))
                     .setIsBrowsable(true)
                     .setIsPlayable(false)
                     .build()
@@ -178,6 +178,7 @@ class MusicService : MediaLibraryService() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
             "ACTION_TOGGLE_PLAY_PAUSE" -> {
+                startService(Intent(this, this::class.java))
                 when {
                     player.playbackState == Player.STATE_ENDED -> {
                         player.seekTo(0)
@@ -193,11 +194,17 @@ class MusicService : MediaLibraryService() {
                 updateWidget()
             }
             "ACTION_NEXT" -> {
-                player.seekToNextMediaItem()
+                startService(Intent(this, this::class.java))
+                player.seekForward()
                 updateWidget()
             }
             "ACTION_PREVIOUS" -> {
-                player.seekToPreviousMediaItem()
+                startService(Intent(this, this::class.java))
+                player.seekBack()
+                updateWidget()
+            }
+            "ACTION_START_ACTIVITY" -> {
+                startActivity(Intent(this, MusicActivity::class.java))
                 updateWidget()
             }
             "UPDATE" -> {
@@ -270,6 +277,16 @@ class MusicService : MediaLibraryService() {
                 3,
                 Intent(this, MusicService::class.java).apply {
                     action = "ACTION_NEXT"
+                }, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+        )
+        views.setOnClickPendingIntent(
+            R.id.layout,
+            PendingIntent.getForegroundService(
+                this,
+                4,
+                Intent(this, MusicService::class.java).apply {
+                    action = "ACTION_START_ACTIVITY"
                 }, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
         )
