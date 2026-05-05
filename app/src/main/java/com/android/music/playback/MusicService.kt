@@ -237,12 +237,12 @@ class MusicService : MediaLibraryService() {
             }
             "ACTION_NEXT" -> {
                 startService(Intent(this, this::class.java))
-                player.seekForward()
+                player.seekToNextMediaItem()
                 updateWidget()
             }
             "ACTION_PREVIOUS" -> {
                 startService(Intent(this, this::class.java))
-                player.seekBack()
+                player.seekToPreviousMediaItem()
                 updateWidget()
             }
             "ACTION_START_ACTIVITY" -> {
@@ -288,9 +288,15 @@ class MusicService : MediaLibraryService() {
         views.setTextViewText(R.id.line1, mediaMetadata.title ?: "")
         views.setTextViewText(R.id.line2, mediaMetadata.artist ?: "")
         if (player.isPlaying) {
-            views.setImageViewResource(R.id.button6, androidx.media3.session.R.drawable.media3_icon_pause)
+            views.setImageViewResource(
+                R.id.button6,
+                androidx.media3.session.R.drawable.media3_icon_pause
+            )
         } else {
-            views.setImageViewResource(R.id.button6, androidx.media3.session.R.drawable.media3_icon_play)
+            views.setImageViewResource(
+                R.id.button6,
+                androidx.media3.session.R.drawable.media3_icon_play
+            )
         }
         views.setOnClickPendingIntent(
             R.id.button5,
@@ -324,12 +330,11 @@ class MusicService : MediaLibraryService() {
         )
         views.setOnClickPendingIntent(
             R.id.layout,
-            PendingIntent.getForegroundService(
+            PendingIntent.getActivity(
                 this,
                 4,
-                Intent(this, MusicService::class.java).apply {
-                    action = "ACTION_START_ACTIVITY"
-                }, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                Intent(this, MusicActivity::class.java),
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
         )
         manager.updateAppWidget(ids, views)
