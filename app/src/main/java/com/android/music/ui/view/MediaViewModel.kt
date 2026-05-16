@@ -1,89 +1,286 @@
 package com.android.music.ui.view
 
 import android.app.Application
+import android.content.ComponentName
+import android.util.Log
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.application
 import androidx.media3.common.MediaItem
+import androidx.media3.common.MediaMetadata
+import androidx.media3.common.Player
+import androidx.media3.session.MediaController
+import androidx.media3.session.SessionToken
+import androidx.preference.PreferenceManager
 import com.android.music.model.MusicRepository
+import com.android.music.model.saveQueue
+import com.android.music.playback.MusicService
+import com.google.common.util.concurrent.ListenableFuture
+import com.google.common.util.concurrent.FutureCallback
+import com.google.common.util.concurrent.Futures
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
+import kotlin.random.Random
 
 class MediaViewModel(application: Application) : AndroidViewModel(application) {
-    private val _genreFilter = MutableLiveData<String?>(null)
-    private val _albumFilter = MutableLiveData<String?>(null)
-    private val _artistFilter = MutableLiveData<String?>(null)
-    private val songsMap: MutableLiveData<MutableList<MediaItem>> =
-        MutableLiveData<MutableList<MediaItem>>()
-
-    fun getSongs(): LiveData<MutableList<MediaItem>> {
-        return songsMap
-    }
+    var controller by mutableStateOf<MediaController?>(null)
+        private set
+    private var controllerFuture: ListenableFuture<MediaController>? = null
+    var currentPosition by mutableLongStateOf(0L)
+    var duration by mutableLongStateOf(0L)
+    var isPlaying by mutableStateOf(false)
+    var mediaMetadata by mutableStateOf(MediaMetadata.EMPTY)
+    private var repository = MusicRepository.getInstance(application)
+    private val _uiState = MutableStateFlow(SongsUiState())
+    val uiState: StateFlow<SongsUiState> = _uiState.asStateFlow()
 
     fun loadSongs() {
-        val repository = MusicRepository.getInstance(getApplication())
-        val mediaItems: MutableList<MediaItem> = repository.loadSongs(_albumFilter.value, _artistFilter.value, _genreFilter.value)
-        songsMap.postValue(mediaItems)
-    }
-    private val albumsMap: MutableLiveData<MutableList<MediaItem>> =
-        MutableLiveData<MutableList<MediaItem>>()
-
-    fun getAlbums(): LiveData<MutableList<MediaItem>> {
-        return albumsMap
+        val filter = _uiState.value.activeFilter
+        val mediaItems: MutableList<MediaItem> = repository.loadSongs(
+            if (filter is SongFilter.Album) filter.name else null,
+            if (filter is SongFilter.Artist) filter.name else null,
+            if (filter is SongFilter.Genre) filter.name else null
+        )
+        _uiState.update { it.copy(songList = mediaItems) }
     }
 
     fun loadAlbums(album: String? = null) {
-        val repository = MusicRepository.getInstance(getApplication())
         val mediaItems: MutableList<MediaItem> = repository.loadAlbums(album)
-        albumsMap.postValue(mediaItems)
-    }
-
-    fun setAlbumFilter(album: String?) {
-        _albumFilter.value = album
-    }
-
-    fun getAlbumFilter(): String? {
-        return _albumFilter.value
-    }
-
-    private val artistsMap: MutableLiveData<MutableList<MediaItem>> =
-        MutableLiveData<MutableList<MediaItem>>()
-
-    fun getArtists(): LiveData<MutableList<MediaItem>> {
-        return artistsMap
+        _uiState.update { it.copy(albumList = mediaItems) }
     }
 
     fun loadArtists(artist: String? = null) {
-        val repository = MusicRepository.getInstance(getApplication())
         val mediaItems: MutableList<MediaItem> = repository.loadArtists(artist)
-        artistsMap.postValue(mediaItems)
-    }
-
-    fun setArtistFilter(artist: String?) {
-        _artistFilter.value = artist
-    }
-
-    fun getArtistFilter(): String? {
-        return _artistFilter.value
-    }
-
-    private val genreMap: MutableLiveData<MutableList<MediaItem>> =
-        MutableLiveData<MutableList<MediaItem>>()
-
-    fun getGenres(): LiveData<MutableList<MediaItem>> {
-        return genreMap
+        _uiState.update { it.copy(artistList = mediaItems) }
     }
 
     fun loadGenres(genre: String? = null) {
-        val repository = MusicRepository.getInstance(getApplication())
         val mediaItems: MutableList<MediaItem> = repository.loadGenres(genre)
-        genreMap.postValue(mediaItems)
+        _uiState.update { it.copy(genreList = mediaItems) }
     }
 
-    fun setGenreFilter(genre: String?) {
-        _genreFilter.value = genre
+    fun applyFilterAndLoadSongs(album: String?, artist: String?, genre: String?) {
+        _uiState.update { it.copy(isLoading = true) }
+        if (album != null) {
+            _uiState.update { it.copy(activeFilter = SongFilter.Album(album)) }
+        } else if (artist != null) {
+            _uiState.update { it.copy(activeFilter = SongFilter.Artist(artist)) }
+        } else if (genre != null) {
+            _uiState.update { it.copy(activeFilter = SongFilter.Genre(genre)) }
+        } else {
+            _uiState.update { it.copy(activeFilter = SongFilter.None) }
+        }
+        loadSongs() // Reloads the songsMap repository data instantly
+        _uiState.update { it.copy(isLoading = false) }
     }
 
-    fun getGenreFilter(): String? {
-        return _genreFilter.value
+    init {
+        initializeMediaController()
     }
 
+    fun initializeMediaController() {
+        val token = SessionToken(application, ComponentName(application, MusicService::class.java))
+        val future = MediaController.Builder(application, token).buildAsync()
+        controllerFuture = future
+
+        Futures.addCallback(
+            future,
+            object : FutureCallback<MediaController> {
+                override fun onSuccess(ctrl: MediaController) {
+                    // Media3 triggers this cleanly on the correct application thread profile
+                    controller = ctrl
+                    updateState(ctrl)
+
+                    ctrl.addListener(object : Player.Listener {
+                        override fun onEvents(player: Player, events: Player.Events) {
+                            updateState(ctrl)
+                        }
+                    })
+
+                    _uiState.update { it.copy(isControllerReady = true) }
+                }
+
+                override fun onFailure(t: Throwable) {
+                    Log.e("MusicViewModel", "Failed to bind asynchronous MediaController", t)
+                }
+            },
+            application.mainExecutor
+        )
+    }
+
+    fun playTrack(track: MediaItem) {
+        val activeCtrl = controller ?: return
+        val items = _uiState.value.songList
+        val index = items.indexOf(track)
+        if (index == -1) return
+
+        val shuffle = activeCtrl.shuffleModeEnabled
+        val repeat = activeCtrl.repeatMode
+
+        activeCtrl.setMediaItems(items, index, 0L)
+        activeCtrl.prepare()
+        activeCtrl.shuffleModeEnabled = shuffle
+        activeCtrl.repeatMode = repeat
+        activeCtrl.play()
+
+        saveQueueToPreferences(items)
+    }
+
+    fun shuffleQueue() {
+        val activeCtrl = controller ?: return
+        val items = _uiState.value.songList
+        if (items.isEmpty()) return
+
+        val startIndex = Random.nextInt(items.size)
+        val repeat = activeCtrl.repeatMode
+
+        activeCtrl.setMediaItems(items, startIndex, 0L)
+        activeCtrl.prepare()
+        activeCtrl.shuffleModeEnabled = true
+        activeCtrl.repeatMode = repeat
+        activeCtrl.play()
+
+        saveQueueToPreferences(items)
+    }
+
+    fun toggleRepeatMode() {
+        val activeCtrl = controller ?: return
+
+        // Compute the next loop iteration step exactly like your old code block
+        val nextMode = when (activeCtrl.repeatMode) {
+            Player.REPEAT_MODE_OFF -> Player.REPEAT_MODE_ALL
+            Player.REPEAT_MODE_ALL -> Player.REPEAT_MODE_ONE
+            Player.REPEAT_MODE_ONE -> Player.REPEAT_MODE_OFF
+            else -> Player.REPEAT_MODE_OFF
+        }
+
+        activeCtrl.repeatMode = nextMode
+    }
+
+    fun toggleShuffleMode() {
+        val activeCtrl = controller ?: return
+
+        if (activeCtrl.shuffleModeEnabled) {
+            activeCtrl.shuffleModeEnabled = false
+        } else {
+            // Execute your custom 2 AM queue-mixing handler script
+            reshuffle(activeCtrl)
+        }
+    }
+
+    private fun saveQueueToPreferences(items: List<MediaItem>) {
+        val filter = _uiState.value.activeFilter
+        val query = _uiState.value.searchQuery
+        controller?.saveQueue(
+            PreferenceManager.getDefaultSharedPreferences(application),
+            items.toMutableList(),
+            if (filter is SongFilter.Album) filter.name else null,
+            if (filter is SongFilter.Artist) filter.name else null,
+            if (filter is SongFilter.Genre) filter.name else null,
+            query.ifBlank { null },
+        )
+    }
+
+    override fun onCleared() {
+        controllerFuture?.let { MediaController.releaseFuture(it) }
+        super.onCleared()
+    }
+
+    fun load() {
+        _uiState.update { it.copy(isLoading = true) }
+        loadSongs()
+        loadAlbums()
+        loadArtists()
+        loadGenres()
+        _uiState.update { it.copy(isLoading = false) }
+    }
+
+    fun refreshTab(index: Int) {
+        when (index) {
+            0 -> {
+                applyFilterAndLoadSongs(null, null, null)
+            }
+
+            1 -> {
+                loadAlbums()
+            }
+
+            2 -> {
+                loadArtists()
+            }
+
+            3 -> {
+                loadGenres()
+            }
+        }
+    }
+
+    fun onSearchQueryChanged(query: String) {
+        _uiState.update {
+            it.copy(
+                searchQuery = query,
+                searchResults = repository.searchSongs(query) ?: emptyList()
+            )
+        }
+    }
+
+    fun clearSearch() {
+        _uiState.update { it.copy(searchQuery = "", searchResults = emptyList()) }
+    }
+
+    fun reshuffle(controller: MediaController) {
+        val currentIndex = controller.currentMediaItemIndex
+        val positionMs = controller.currentPosition
+
+        val items = buildList {
+            for (i in 0 until controller.mediaItemCount) {
+                add(controller.getMediaItemAt(i))
+            }
+        }
+
+        controller.setMediaItems(items, currentIndex, positionMs)
+        controller.shuffleModeEnabled = true
+        controller.prepare()
+    }
+
+    private fun updateState(ctrl: MediaController) {
+        isPlaying = ctrl.isPlaying
+        duration = ctrl.duration.coerceAtLeast(0L)
+        mediaMetadata = ctrl.mediaMetadata
+    }
+
+    suspend fun pollPosition() {
+        while (true) {
+            controller?.let {
+                currentPosition = it.currentPosition
+            }
+            delay(500)
+        }
+    }
+}
+
+data class SongsUiState(
+    val songList: List<MediaItem> = emptyList(),
+    val albumList: List<MediaItem> = emptyList(),
+    val artistList: List<MediaItem> = emptyList(),
+    val genreList: List<MediaItem> = emptyList(),
+    val isLoading: Boolean = true,
+    val isControllerReady: Boolean = false,
+    val activeFilter: SongFilter = SongFilter.None,
+    val searchQuery: String = "",
+    val searchResults: List<MediaItem> = emptyList()
+)
+
+sealed interface SongFilter {
+    object None : SongFilter
+    data class Album(val name: String) : SongFilter
+    data class Artist(val name: String) : SongFilter
+    data class Genre(val name: String) : SongFilter
 }
