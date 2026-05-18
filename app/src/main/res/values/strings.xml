@@ -18,7 +18,6 @@
 -->
 
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
-    <string name="nowplaying_title">Now playing</string>
     <string name="artists_title">Artists</string>
     <string name="albums_title">Albums</string>
     <string name="tracks_title">Songs</string>

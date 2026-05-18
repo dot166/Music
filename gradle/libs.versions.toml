@@ -2,7 +2,7 @@
 aconfig = "1.3.1"
 agp = "9.2.1"
 coilCompose = "2.7.0"
-jLib = "104.2.30"
+jLib = "104.2.31"
 media3 = "1.10.1"
 compose = "2.3.21"
 runtimeLivedata = "1.11.1"
@@ -16,6 +16,9 @@ materialIconsExtended = "1.7.8"
 rssparser = "6.1.5"
 uiAndroid = "1.11.1"
 material3 = "1.4.0"
+uiToolingPreview = "1.11.1"
+uiTooling = "1.11.1"
+media3TestUtils = "1.10.1"
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
@@ -41,3 +44,6 @@ kotlinx-coroutines-guava = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-
 rssparser = { module = "com.prof18.rssparser:rssparser", version.ref = "rssparser" }
 androidx-material3 = { group = "androidx.compose.material3", name = "material3", version.ref = "material3" }
 j-lib = { module = "io.github.dot166:j-Lib", version.ref = "jLib" }
+androidx-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview", version.ref = "uiToolingPreview" }
+androidx-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling", version.ref = "uiTooling" }
+androidx-media3-test-utils = { group = "androidx.media3", name = "media3-test-utils", version.ref = "media3TestUtils" }

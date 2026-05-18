@@ -37,7 +37,7 @@ android {
         applicationId = "com.android.music"
         minSdk = 31
         targetSdk = 36
-        versionCode = 3
+        versionCode = 4
         versionName = versionCode.toString()
     }
     buildTypes {
@@ -66,6 +66,8 @@ kotlin {
 }
 
 dependencies {
+    implementation(libs.androidx.media3.test.utils)
+    implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.j.lib)
     implementation(libs.androidx.media3.exoplayer)
     implementation(libs.androidx.media3.common)
@@ -84,6 +86,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.kotlinx.coroutines.guava)
     implementation(libs.accompanist.drawablepainter)
+    debugImplementation(libs.androidx.ui.tooling)
 }
 
 //aconfig {
