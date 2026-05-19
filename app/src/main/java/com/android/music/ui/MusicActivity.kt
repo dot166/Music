@@ -4,7 +4,9 @@ import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
 import androidx.activity.compose.setContent
+import androidx.appcompat.content.res.AppCompatResources
 import androidx.compose.foundation.background
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,12 +22,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Pause
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Shuffle
-import androidx.compose.material.icons.filled.SkipNext
-import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -55,6 +52,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -72,6 +70,7 @@ import com.android.music.ui.components.TabScreen
 import com.android.music.ui.view.MediaViewModel
 import com.android.music.ui.view.MediaViewModelImpl
 import com.android.music.ui.view.StubViewModel
+import com.google.accompanist.drawablepainter.rememberDrawablePainter
 import io.github.dot166.jlib.app.SettingsLibComposeTheme
 import io.github.dot166.jlib.app.jActivity
 import io.github.dot166.jlib.utils.DateUtils.formatTime
@@ -165,8 +164,8 @@ class MusicActivity : jActivity() {
                                 model = artBytes,
                                 contentDescription = "Album Art",
                                 contentScale = ContentScale.Crop,
-                                placeholder = painterResource(id = R.drawable.def_art),
-                                error = painterResource(id = R.drawable.def_art),
+                                placeholder = rememberDrawablePainter(AppCompatResources.getDrawable(LocalContext.current, R.drawable.def_art)),
+                                error = rememberDrawablePainter(AppCompatResources.getDrawable(LocalContext.current, R.drawable.def_art)),
                                 modifier = Modifier
                                     .size(300.dp)
                                     .background(
@@ -182,13 +181,21 @@ class MusicActivity : jActivity() {
                         Text(
                             text = viewModel.mediaMetadata.title?.toString()
                                 ?: "Unknown",
-                            style = MaterialTheme.typography.headlineMedium
+                            style = MaterialTheme.typography.headlineMedium,
+                            maxLines = 1,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .basicMarquee(iterations = Int.MAX_VALUE)
                         )
                         Text(
                             text = viewModel.mediaMetadata.artist?.toString()
                                 ?: stringResource(
                                     R.string.unknown_artist_name
-                                ), style = MaterialTheme.typography.bodyLarge
+                                ), style = MaterialTheme.typography.bodyLarge,
+                            maxLines = 1,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .basicMarquee(iterations = Int.MAX_VALUE)
                         )
 
                         Spacer(modifier = Modifier.height(32.dp))
@@ -236,7 +243,7 @@ class MusicActivity : jActivity() {
 
                             IconButton(onClick = { controller?.seekBack() }) {
                                 Icon(
-                                    Icons.Default.SkipPrevious,
+                                    painterResource(androidx.media3.session.R.drawable.media3_icon_previous),
                                     stringResource(R.string.skip_previous)
                                 )
                             }
@@ -246,14 +253,14 @@ class MusicActivity : jActivity() {
                                 modifier = Modifier.size(64.dp)
                             ) {
                                 Icon(
-                                    if (viewModel.isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                                    if (viewModel.isPlaying) painterResource(androidx.media3.session.R.drawable.media3_icon_pause) else painterResource(androidx.media3.session.R.drawable.media3_icon_play),
                                     stringResource(R.string.play_pause)
                                 )
                             }
 
                             IconButton(onClick = { controller?.seekForward() }) {
                                 Icon(
-                                    Icons.Default.SkipNext,
+                                    painterResource(androidx.media3.session.R.drawable.media3_icon_next),
                                     stringResource(R.string.skip_next)
                                 )
                             }
@@ -334,7 +341,7 @@ class MusicActivity : jActivity() {
                                                 FloatingActionButton(
                                                     onClick = { viewModel.shuffleQueue() },
                                                 ) {
-                                                    Icon(Icons.Filled.Shuffle, contentDescription = stringResource(R.string.shuffle_displayed_songs))
+                                                    Icon(painterResource(androidx.media3.session.R.drawable.media3_icon_shuffle_on), contentDescription = stringResource(R.string.shuffle_displayed_songs))
                                                 }
                                             }
                                         ) { padding ->
