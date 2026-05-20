@@ -2,20 +2,17 @@
 aconfig = "1.3.1"
 agp = "9.2.1"
 coilCompose = "2.7.0"
-jLib = "104.2.31"
+jLib = "104.2.32"
 media3 = "1.10.1"
 compose = "2.3.21"
-runtimeLivedata = "1.11.1"
 accompanistDrawablepainter = "0.37.3"
 activityCompose = "1.13.0"
 kotlinxCoroutinesGuava = "1.11.0"
 lifecycleViewmodelCompose = "2.10.0"
 material3Android = "1.4.0"
 materialIconsExtended = "1.7.8"
-uiAndroid = "1.11.1"
+uiAndroid = "1.11.2"
 material3 = "1.4.0"
-uiToolingPreview = "1.11.1"
-uiTooling = "1.11.1"
 media3TestUtils = "1.10.1"
 
 [plugins]
@@ -28,7 +25,7 @@ androidx-media3-exoplayer = { module = "androidx.media3:media3-exoplayer", versi
 androidx-media3-common = { module = "androidx.media3:media3-common", version.ref = "media3" }
 androidx-media3-session = { module = "androidx.media3:media3-session", version.ref = "media3" }
 androidx-media3-ui = { module = "androidx.media3:media3-ui", version.ref = "media3" }
-androidx-runtime-livedata = { module = "androidx.compose.runtime:runtime-livedata", version.ref = "runtimeLivedata" }
+androidx-runtime-livedata = { module = "androidx.compose.runtime:runtime-livedata", version.ref = "uiAndroid" }
 coil-compose = { module = "io.coil-kt:coil-compose", version.ref = "coilCompose" }
 accompanist-drawablepainter = { module = "com.google.accompanist:accompanist-drawablepainter", version.ref = "accompanistDrawablepainter" }
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }
@@ -39,6 +36,6 @@ androidx-ui-android = { module = "androidx.compose.ui:ui-android", version.ref =
 kotlinx-coroutines-guava = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-guava", version.ref = "kotlinxCoroutinesGuava" }
 androidx-material3 = { group = "androidx.compose.material3", name = "material3", version.ref = "material3" }
 j-lib = { module = "io.github.dot166:j-Lib", version.ref = "jLib" }
-androidx-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview", version.ref = "uiToolingPreview" }
-androidx-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling", version.ref = "uiTooling" }
+androidx-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview", version.ref = "uiAndroid" }
+androidx-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling", version.ref = "uiAndroid" }
 androidx-media3-test-utils = { group = "androidx.media3", name = "media3-test-utils", version.ref = "media3TestUtils" }

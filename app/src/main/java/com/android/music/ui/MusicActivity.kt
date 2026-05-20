@@ -48,7 +48,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
@@ -186,6 +189,7 @@ class MusicActivity : jActivity() {
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .basicMarquee(iterations = Int.MAX_VALUE)
+                                .padding(24.dp)
                         )
                         Text(
                             text = viewModel.mediaMetadata.artist?.toString()
@@ -196,6 +200,7 @@ class MusicActivity : jActivity() {
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .basicMarquee(iterations = Int.MAX_VALUE)
+                                .padding(24.dp)
                         )
 
                         Spacer(modifier = Modifier.height(32.dp))
@@ -210,7 +215,8 @@ class MusicActivity : jActivity() {
                         )
 
                         Row(
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier.fillMaxWidth()
+                                .padding(24.dp),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Text(formatTime(viewModel.currentPosition))
@@ -241,7 +247,7 @@ class MusicActivity : jActivity() {
                                 )
                             }
 
-                            IconButton(onClick = { controller?.seekBack() }) {
+                            IconButton(onClick = { controller?.seekToPrevious() }) {
                                 Icon(
                                     painterResource(androidx.media3.session.R.drawable.media3_icon_previous),
                                     stringResource(R.string.skip_previous)
@@ -258,7 +264,7 @@ class MusicActivity : jActivity() {
                                 )
                             }
 
-                            IconButton(onClick = { controller?.seekForward() }) {
+                            IconButton(onClick = { controller?.seekToNext() }) {
                                 Icon(
                                     painterResource(androidx.media3.session.R.drawable.media3_icon_next),
                                     stringResource(R.string.skip_next)
@@ -294,6 +300,7 @@ class MusicActivity : jActivity() {
                     modifier = Modifier
                         .padding(innerPadding),
                 ) {
+                    var isAllowedToRefresh by remember{mutableStateOf(true)}
                     val pagerState = rememberPagerState(pageCount = { 4 })
                     val coroutineScope = rememberCoroutineScope()
 
@@ -309,6 +316,10 @@ class MusicActivity : jActivity() {
                     )
 
                     LaunchedEffect(pagerState.currentPage) {
+                        if (pagerState.currentPage == 0 && !isAllowedToRefresh) {
+                            isAllowedToRefresh = true
+                            return@LaunchedEffect
+                        }
                         viewModel.refreshTab(pagerState.currentPage)
                     }
 
@@ -364,6 +375,7 @@ class MusicActivity : jActivity() {
                                         itemsList = uiState.albumList,
                                         onItemClick = { _, albumName ->
                                             viewModel.applyFilterAndLoadSongs(album = albumName, artist = null, genre = null)
+                                            isAllowedToRefresh = false
                                             coroutineScope.launch { pagerState.animateScrollToPage(0) }
                                         }
                                     )
@@ -373,6 +385,7 @@ class MusicActivity : jActivity() {
                                         itemsList = uiState.artistList,
                                         onItemClick = { _, artistName ->
                                             viewModel.applyFilterAndLoadSongs(album = null, artist = artistName, genre = null)
+                                            isAllowedToRefresh = false
                                             coroutineScope.launch { pagerState.animateScrollToPage(0) }
                                         }
                                     )
@@ -382,6 +395,7 @@ class MusicActivity : jActivity() {
                                         itemsList = uiState.genreList,
                                         onItemClick = { _, genreName ->
                                             viewModel.applyFilterAndLoadSongs(album = null, artist = null, genre = genreName)
+                                            isAllowedToRefresh = false
                                             coroutineScope.launch { pagerState.animateScrollToPage(0) }
                                         }
                                     )
