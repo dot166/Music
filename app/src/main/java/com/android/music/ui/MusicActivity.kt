@@ -189,7 +189,7 @@ class MusicActivity : jActivity() {
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .basicMarquee(iterations = Int.MAX_VALUE)
-                                .padding(24.dp)
+                                .padding(horizontal = 24.dp)
                         )
                         Text(
                             text = viewModel.mediaMetadata.artist?.toString()
@@ -200,7 +200,7 @@ class MusicActivity : jActivity() {
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .basicMarquee(iterations = Int.MAX_VALUE)
-                                .padding(24.dp)
+                                .padding(horizontal = 24.dp)
                         )
 
                         Spacer(modifier = Modifier.height(32.dp))
@@ -216,7 +216,7 @@ class MusicActivity : jActivity() {
 
                         Row(
                             modifier = Modifier.fillMaxWidth()
-                                .padding(24.dp),
+                                .padding(horizontal = 24.dp),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Text(formatTime(viewModel.currentPosition))
