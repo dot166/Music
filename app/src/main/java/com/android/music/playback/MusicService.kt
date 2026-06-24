@@ -8,7 +8,6 @@ import android.graphics.BitmapFactory
 import android.util.Log
 import android.widget.RemoteViews
 import androidx.annotation.OptIn
-import androidx.core.content.edit
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
@@ -19,7 +18,6 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.session.LibraryResult
 import androidx.media3.session.MediaLibraryService
 import androidx.media3.session.MediaSession
-import androidx.preference.PreferenceManager
 import com.android.music.MediaControlsWidget
 import com.android.music.R
 import com.android.music.model.MusicRepository
@@ -28,6 +26,7 @@ import com.android.music.ui.MusicActivity
 import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
+import io.github.dot166.jlib.app.DefaultSharedPrefsManager
 
 class MusicService : MediaLibraryService() {
 
@@ -49,21 +48,15 @@ class MusicService : MediaLibraryService() {
 
         player.addListener(object: Player.Listener {
             override fun onMediaItemTransition(item: MediaItem?, reason: Int) {
-                PreferenceManager.getDefaultSharedPreferences(this@MusicService).edit {
-                    putInt("queue_index", player.currentMediaItemIndex)
-                }
+                DefaultSharedPrefsManager.getSharedPreferencesStorage(this@MusicService).setInt("queue_index", player.currentMediaItemIndex)
             }
 
             override fun onShuffleModeEnabledChanged(shuffleModeEnabled: Boolean) {
-                PreferenceManager.getDefaultSharedPreferences(this@MusicService).edit {
-                    putBoolean("queue_shuffle", shuffleModeEnabled)
-                }
+                DefaultSharedPrefsManager.getSharedPreferencesStorage(this@MusicService).setBoolean("queue_shuffle", shuffleModeEnabled)
             }
 
             override fun onRepeatModeChanged(repeatMode: Int) {
-                PreferenceManager.getDefaultSharedPreferences(this@MusicService).edit {
-                    putInt("queue_repeat", repeatMode)
-                }
+                DefaultSharedPrefsManager.getSharedPreferencesStorage(this@MusicService).setInt("queue_repeat", repeatMode)
             }
             override fun onMediaMetadataChanged(mediaMetadata: MediaMetadata) {
                 updateWidget()
@@ -117,8 +110,7 @@ class MusicService : MediaLibraryService() {
                 pageSize: Int,
                 params: LibraryParams?
             ): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> {
-                Log.i("AUTO - dbg", "onGetChildren()")
-                Log.i("AUTO - dbg", "parentId:$parentId")
+                Log.i("AUTO - dbg", "onGetChildren() for parentId: $parentId")
 
                 val items: List<MediaItem> = when(parentId) {
                     "root" -> rootChildren
@@ -220,7 +212,6 @@ class MusicService : MediaLibraryService() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
             "ACTION_TOGGLE_PLAY_PAUSE" -> {
-                startService(Intent(this, this::class.java))
                 when {
                     player.playbackState == Player.STATE_ENDED -> {
                         player.seekTo(0)
@@ -234,16 +225,17 @@ class MusicService : MediaLibraryService() {
                     }
                 }
                 updateWidget()
+                return START_STICKY
             }
             "ACTION_NEXT" -> {
-                startService(Intent(this, this::class.java))
                 player.seekToNextMediaItem()
                 updateWidget()
+                return START_STICKY
             }
             "ACTION_PREVIOUS" -> {
-                startService(Intent(this, this::class.java))
                 player.seekToPreviousMediaItem()
                 updateWidget()
+                return START_STICKY
             }
             "ACTION_START_ACTIVITY" -> {
                 startActivity(Intent(this, MusicActivity::class.java))

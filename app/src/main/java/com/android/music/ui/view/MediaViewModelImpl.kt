@@ -8,7 +8,6 @@ import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.provider.MediaStore
 import android.provider.OpenableColumns
-import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -25,9 +24,7 @@ import com.android.music.R
 import com.android.music.model.MusicRepository
 import com.android.music.model.saveQueue
 import com.android.music.playback.MusicService
-import com.google.common.util.concurrent.ListenableFuture
-import com.google.common.util.concurrent.FutureCallback
-import com.google.common.util.concurrent.Futures
+import com.google.common.util.concurrent.MoreExecutors
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -37,7 +34,6 @@ import kotlin.random.Random
 
 class MediaViewModelImpl(application: Application) : AndroidViewModel(application), MediaViewModel {
     override var controller by mutableStateOf<Player?>(null)
-    private var controllerFuture: ListenableFuture<MediaController>? = null
     override var currentPosition by mutableLongStateOf(0L)
     override var duration by mutableLongStateOf(0L)
     override var isPlaying by mutableStateOf(false)
@@ -84,40 +80,6 @@ class MediaViewModelImpl(application: Application) : AndroidViewModel(applicatio
         }
         loadSongs() // Reloads the songsMap repository data instantly
         _uiState.update { it.copy(isLoading = false) }
-    }
-
-    init {
-        initializeMediaController()
-    }
-
-    override fun initializeMediaController() {
-        val token = SessionToken(application, ComponentName(application, MusicService::class.java))
-        val future = MediaController.Builder(application, token).buildAsync()
-        controllerFuture = future
-
-        Futures.addCallback(
-            future,
-            object : FutureCallback<MediaController> {
-                override fun onSuccess(ctrl: MediaController) {
-                    // Media3 triggers this cleanly on the correct application thread profile
-                    controller = ctrl
-                    updateState(ctrl)
-
-                    ctrl.addListener(object : Player.Listener {
-                        override fun onEvents(player: Player, events: Player.Events) {
-                            updateState(ctrl)
-                        }
-                    })
-
-                    _uiState.update { it.copy(isControllerReady = true) }
-                }
-
-                override fun onFailure(t: Throwable) {
-                    Log.e("MusicViewModel", "Failed to bind asynchronous MediaController", t)
-                }
-            },
-            application.mainExecutor
-        )
     }
 
     override fun playTrack(track: MediaItem) {
@@ -193,11 +155,6 @@ class MediaViewModelImpl(application: Application) : AndroidViewModel(applicatio
         )
     }
 
-    override fun onCleared() {
-        controllerFuture?.let { MediaController.releaseFuture(it) }
-        super.onCleared()
-    }
-
     override fun load() {
         _uiState.update { it.copy(isLoading = true) }
         loadSongs()
@@ -255,10 +212,10 @@ class MediaViewModelImpl(application: Application) : AndroidViewModel(applicatio
         controller.prepare()
     }
 
-    private fun updateState(ctrl: MediaController) {
-        isPlaying = ctrl.isPlaying
-        duration = ctrl.duration.coerceAtLeast(0L)
-        mediaMetadata = ctrl.mediaMetadata
+    private fun updateState(player: Player) {
+        isPlaying = player.isPlaying
+        duration = player.duration.coerceAtLeast(0L)
+        mediaMetadata = player.mediaMetadata
     }
 
     override suspend fun pollPosition() {
@@ -268,6 +225,23 @@ class MediaViewModelImpl(application: Application) : AndroidViewModel(applicatio
             }
             delay(500)
         }
+    }
+
+    override fun connectController(context: Context) {
+        val token = SessionToken(context, ComponentName(context, MusicService::class.java))
+        val future = MediaController.Builder(context, token).buildAsync()
+        future.addListener({
+            val ctrl = future.get()
+            controller = ctrl
+            updateState(ctrl)
+
+            ctrl.addListener(object : Player.Listener {
+                override fun onEvents(player: Player, events: Player.Events) {
+                    updateState(ctrl)
+                }
+            })
+            _uiState.update { it.copy(isControllerReady = true) }
+        }, MoreExecutors.directExecutor())
     }
 
     override fun pickerOnSearchQueryChanged(query: String, baseUri: Uri) {
@@ -391,21 +365,3 @@ class MediaViewModelImpl(application: Application) : AndroidViewModel(applicatio
     }
 }
 
-data class SongsUiState(
-    val songList: List<MediaItem> = emptyList(),
-    val albumList: List<MediaItem> = emptyList(),
-    val artistList: List<MediaItem> = emptyList(),
-    val genreList: List<MediaItem> = emptyList(),
-    val isLoading: Boolean = true,
-    val isControllerReady: Boolean = false,
-    val activeFilter: SongFilter = SongFilter.None,
-    val searchQuery: String = "",
-    val searchResults: List<MediaItem> = emptyList()
-)
-
-sealed interface SongFilter {
-    object None : SongFilter
-    data class Album(val name: String) : SongFilter
-    data class Artist(val name: String) : SongFilter
-    data class Genre(val name: String) : SongFilter
-}

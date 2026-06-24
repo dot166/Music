@@ -1,5 +1,6 @@
 package com.android.music.ui.view
 
+import android.content.Context
 import android.net.Uri
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
@@ -49,10 +50,6 @@ class StubViewModel : MediaViewModel {
     }
 
     override fun applyFilterAndLoadSongs(album: String?, artist: String?, genre: String?) {
-        // do nothing, unsupported in stub
-    }
-
-    override fun initializeMediaController() {
         // do nothing, unsupported in stub
     }
 
@@ -117,6 +114,10 @@ class StubViewModel : MediaViewModel {
     }
 
     override suspend fun pollPosition() {
+        // do nothing, unsupported in stub
+    }
+
+    override fun connectController(context: Context) {
         // do nothing, unsupported in stub
     }
 

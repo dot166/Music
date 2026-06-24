@@ -52,7 +52,7 @@ import com.android.music.ui.components.TabScreen
 import com.android.music.ui.view.MediaViewModel
 import com.android.music.ui.view.MediaViewModelImpl
 import com.android.music.ui.view.StubViewModel
-import io.github.dot166.jlib.app.SettingsLibComposeTheme
+import com.android.settingslib.spa.framework.theme.SettingsTheme
 import io.github.dot166.jlib.app.jActivity
 
 class MusicPicker : jActivity() {
@@ -65,7 +65,7 @@ class MusicPicker : jActivity() {
             intent.data ?: MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
         }
         setContent {
-            SettingsLibComposeTheme {
+            SettingsTheme {
                 val viewModel: MediaViewModelImpl = viewModel()
                 MusicPickerMainScreen(viewModel, baseUri)
             }
@@ -80,7 +80,7 @@ class MusicPicker : jActivity() {
         device = "id:Nexus 5X" // the screen on the Nexus 5X is close enough to the fold outer screen
     )
     fun Preview() {
-        SettingsLibComposeTheme {
+        SettingsTheme {
             MusicPickerMainScreen(StubViewModel(), MediaStore.Audio.Media.EXTERNAL_CONTENT_URI)
         }
     }

@@ -37,7 +37,7 @@ android {
         applicationId = "com.android.music"
         minSdk = 31
         targetSdk = 36
-        versionCode = 7
+        versionCode = 8
         versionName = versionCode.toString()
     }
     buildTypes {
