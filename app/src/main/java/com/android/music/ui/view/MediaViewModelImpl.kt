@@ -9,6 +9,7 @@ import android.net.Uri
 import android.provider.MediaStore
 import android.provider.OpenableColumns
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -37,6 +38,8 @@ class MediaViewModelImpl(application: Application) : AndroidViewModel(applicatio
     override var currentPosition by mutableLongStateOf(0L)
     override var duration by mutableLongStateOf(0L)
     override var isPlaying by mutableStateOf(false)
+    override var shuffle by mutableStateOf(false)
+    override var repeat by mutableIntStateOf(0)
     override var mediaMetadata by mutableStateOf(MediaMetadata.EMPTY)
     private var repository = MusicRepository.getInstance(application)
     private val _uiState = MutableStateFlow(SongsUiState())
@@ -214,6 +217,8 @@ class MediaViewModelImpl(application: Application) : AndroidViewModel(applicatio
 
     private fun updateState(player: Player) {
         isPlaying = player.isPlaying
+        shuffle = player.shuffleModeEnabled
+        repeat = player.repeatMode
         duration = player.duration.coerceAtLeast(0L)
         mediaMetadata = player.mediaMetadata
     }

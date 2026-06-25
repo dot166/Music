@@ -3,6 +3,7 @@ package com.android.music.ui.view
 import android.content.Context
 import android.net.Uri
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -25,6 +26,8 @@ class StubViewModel : MediaViewModel {
     override var currentPosition by mutableLongStateOf(0L)
     override var duration by mutableLongStateOf(1000L)
     override var isPlaying by mutableStateOf(false)
+    override var shuffle by mutableStateOf(false)
+    override var repeat by mutableIntStateOf(0)
     override var mediaMetadata by mutableStateOf(MediaMetadata.EMPTY)
     private val _uiState = MutableStateFlow(SongsUiState(isControllerReady = true, isLoading = false))
     override val uiState: StateFlow<SongsUiState> = _uiState.asStateFlow()
